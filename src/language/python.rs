@@ -36,10 +36,7 @@ impl LanguageAnalyzer for PythonAnalyzer {
     }
 
     fn parser(&self) -> Result<Parser, String> {
-        let mut parser = Parser::new();
-        let language: tree_sitter::Language = tree_sitter_python::LANGUAGE.into();
-        parser.set_language(&language).map_err(|e| format!("{e:?}"))?;
-        Ok(parser)
+        crate::language::make_parser(tree_sitter_python::LANGUAGE.into())
     }
 
     fn config(&self) -> LanguageConfig {

@@ -134,6 +134,16 @@ pub fn count_decisions(
     count
 }
 
+/// Creates a tree-sitter Parser configured for the given language grammar.
+/// Shared by all language analyzers to avoid duplicating error-handling boilerplate.
+pub fn make_parser(language: tree_sitter::Language) -> Result<Parser, String> {
+    let mut parser = Parser::new();
+    parser
+        .set_language(&language)
+        .map_err(|e| format!("{e:?}"))?;
+    Ok(parser)
+}
+
 pub mod c;
 pub mod javascript;
 mod javascript_like;
