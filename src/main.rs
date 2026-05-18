@@ -1,5 +1,5 @@
 use clap::Parser;
-use lede::{analyze_path, output};
+use lede::{analyze_path, config::ReportConfig, output};
 use std::process;
 
 #[derive(Parser)]
@@ -20,6 +20,14 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
+    let config_dir = if args.path.is_dir() {
+        args.path.clone()
+    } else {
+        args.path.parent().unwrap_or(std::path::Path::new(".")).to_path_buf()
+    };
+
+    let config = ReportConfig::load_from_dir(&config_dir);
+
     let results = match analyze_path(&args.path, args.include_closures) {
         Ok(r) => r,
         Err(e) => {
@@ -35,6 +43,6 @@ fn main() {
     }
 
     let clusters = lede::duplicates::compute_duplicates(&results);
-    let formatter = output::get_formatter(&args.format);
+    let formatter = output::get_formatter(&args.format, config);
     println!("{}", formatter.format(&results, &clusters));
 }

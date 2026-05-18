@@ -1,3 +1,4 @@
+use crate::config::ReportConfig;
 use crate::duplicates::DuplicateCluster;
 use crate::FileResult;
 
@@ -9,10 +10,10 @@ pub mod json;
 pub mod markdown;
 pub mod pretty;
 
-pub fn get_formatter(format: &str) -> Box<dyn OutputFormatter> {
+pub fn get_formatter(format: &str, config: ReportConfig) -> Box<dyn OutputFormatter> {
     match format {
-        "json" => Box::new(json::JsonFormatter),
-        "pretty" => Box::new(pretty::PrettyFormatter),
-        _ => Box::new(markdown::MarkdownFormatter),
+        "json" => Box::new(json::JsonFormatter { config }),
+        "pretty" => Box::new(pretty::PrettyFormatter { config }),
+        _ => Box::new(markdown::MarkdownFormatter { config }),
     }
 }

@@ -1,6 +1,8 @@
-use crate::{FileResult, FunctionComplexity, SummaryStatistics, duplicates::DuplicateCluster, output::OutputFormatter};
+use crate::{FileResult, FunctionComplexity, SummaryStatistics, config::ReportConfig, duplicates::DuplicateCluster, output::OutputFormatter};
 
-pub struct MarkdownFormatter;
+pub struct MarkdownFormatter {
+    pub config: ReportConfig,
+}
 
 impl OutputFormatter for MarkdownFormatter {
     fn format(&self, results: &[FileResult], clusters: &[DuplicateCluster]) -> String {

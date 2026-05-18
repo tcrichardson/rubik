@@ -18,6 +18,12 @@ impl Default for ReportConfig {
     }
 }
 
+impl ReportConfig {
+    pub fn load_from_dir(dir: &Path) -> Self {
+        load_from_dir(dir)
+    }
+}
+
 #[derive(Deserialize, Default)]
 struct RawConfig {
     introduction: Option<String>,

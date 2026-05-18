@@ -1,7 +1,9 @@
-use crate::{FileResult, duplicates::DuplicateCluster, output::OutputFormatter};
+use crate::{FileResult, config::ReportConfig, duplicates::DuplicateCluster, output::OutputFormatter};
 use comfy_table::{Table, ContentArrangement};
 
-pub struct PrettyFormatter;
+pub struct PrettyFormatter {
+    pub config: ReportConfig,
+}
 
 impl OutputFormatter for PrettyFormatter {
     fn format(&self, results: &[FileResult], clusters: &[DuplicateCluster]) -> String {

@@ -192,7 +192,7 @@ fn test_duplicate_clusters_in_output() {
     );
 
     // Also verify markdown output contains the duplication section
-    let formatter = lede::output::markdown::MarkdownFormatter;
+    let formatter = lede::output::markdown::MarkdownFormatter { config: lede::config::ReportConfig::default() };
     let output = formatter.format(&results, &clusters);
     assert!(
         output.contains("Structural Duplication Candidates"),

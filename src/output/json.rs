@@ -1,6 +1,8 @@
-use crate::{AnalysisOutput, FileResult, SummaryStatistics, duplicates::DuplicateCluster, output::OutputFormatter};
+use crate::{AnalysisOutput, FileResult, SummaryStatistics, config::ReportConfig, duplicates::DuplicateCluster, output::OutputFormatter};
 
-pub struct JsonFormatter;
+pub struct JsonFormatter {
+    pub config: ReportConfig,
+}
 
 impl OutputFormatter for JsonFormatter {
     fn format(&self, results: &[FileResult], clusters: &[DuplicateCluster]) -> String {
