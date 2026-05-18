@@ -1,0 +1,5 @@
+[project_summary]
+metrics = ["files_analyzed", "total_complexity"]
+
+[file_summary]
+metrics = ["max_complexity", "max_nesting_depth"]

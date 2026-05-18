@@ -218,6 +218,30 @@ fn test_config_introduction_appears_in_markdown_output() {
 }
 
 #[test]
+fn test_config_metric_filtering_markdown() {
+    let output = lede()
+        .arg("tests/fixtures/config_filtered")
+        .output()
+        .expect("failed to run lede");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    // Project summary: only "files_analyzed" and "total_complexity" should appear
+    assert!(stdout.contains("Files Analyzed"), "expected Files Analyzed in output");
+    assert!(stdout.contains("Total Complexity"), "expected Total Complexity in output");
+
+    // File summary: only "max_complexity" and "max_nesting_depth" should appear
+    assert!(stdout.contains("Max Complexity"), "expected Max Complexity in file summary");
+    assert!(stdout.contains("Max Nesting Depth"), "expected Max Nesting Depth in file summary");
+
+    // These labels only appear in summary table rows, not in the per-function table headers,
+    // so their absence confirms metric filtering is working.
+    assert!(!stdout.contains("Total Functions"), "Total Functions row should be absent (not in either summary list)");
+    assert!(!stdout.contains("Total Lines"), "Total Lines row should be absent (not in either summary list)");
+    assert!(!stdout.contains("Avg Complexity / Function"), "Avg Complexity / Function row should be absent");
+    assert!(!stdout.contains("Avg Halstead Volume"), "Avg Halstead Volume row should be absent");
+}
+
+#[test]
 fn test_config_introduction_appears_in_json_output() {
     let output = lede()
         .arg("tests/fixtures/config_intro")

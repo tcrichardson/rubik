@@ -30,20 +30,26 @@ impl OutputFormatter for MarkdownFormatter {
     }
 }
 
-fn format_summary(summary: &SummaryStatistics, _config: &ReportConfig) -> String {
-    let rows = vec![
-        metric_row("Files Analyzed", summary.files_analyzed),
-        metric_row("Total Functions", summary.total_functions),
-        metric_row("Total Lines", summary.total_lines),
-        metric_row("Total Complexity", summary.total_complexity),
-        metric_row_f64("Avg Complexity / Function", summary.avg_complexity_per_function, 2),
-        metric_row("Max Nesting Depth", summary.max_nesting_depth),
-        metric_row_f64("Avg Nesting Depth", summary.avg_nesting_depth, 2),
-        metric_row_f64("Avg Halstead Volume", summary.avg_halstead_volume, 2),
-        metric_row_f64("Avg Halstead Difficulty", summary.avg_halstead_difficulty, 2),
-        metric_row_f64("Avg Halstead Effort", summary.avg_halstead_effort, 2),
-        metric_row_f64("Avg Halstead Time", summary.avg_halstead_time, 2),
-    ];
+fn format_summary(summary: &SummaryStatistics, config: &ReportConfig) -> String {
+    let rows: Vec<String> = match &config.project_summary_metrics {
+        None => vec![
+            metric_row("Files Analyzed", summary.files_analyzed),
+            metric_row("Total Functions", summary.total_functions),
+            metric_row("Total Lines", summary.total_lines),
+            metric_row("Total Complexity", summary.total_complexity),
+            metric_row_f64("Avg Complexity / Function", summary.avg_complexity_per_function, 2),
+            metric_row("Max Nesting Depth", summary.max_nesting_depth),
+            metric_row_f64("Avg Nesting Depth", summary.avg_nesting_depth, 2),
+            metric_row_f64("Avg Halstead Volume", summary.avg_halstead_volume, 2),
+            metric_row_f64("Avg Halstead Difficulty", summary.avg_halstead_difficulty, 2),
+            metric_row_f64("Avg Halstead Effort", summary.avg_halstead_effort, 2),
+            metric_row_f64("Avg Halstead Time", summary.avg_halstead_time, 2),
+        ],
+        Some(keys) => keys
+            .iter()
+            .filter_map(|k| project_summary_row(k, summary))
+            .collect(),
+    };
 
     let mut out = String::from("## Summary Statistics\n\n");
     out.push_str("| Metric | Value |\n");
@@ -140,6 +146,26 @@ fn format_function_row(func: &FunctionComplexity) -> String {
         func.halstead_effort,
         func.halstead_time
     )
+}
+
+fn project_summary_row(key: &str, summary: &SummaryStatistics) -> Option<String> {
+    match key {
+        "files_analyzed" => Some(metric_row("Files Analyzed", summary.files_analyzed)),
+        "total_functions" => Some(metric_row("Total Functions", summary.total_functions)),
+        "total_lines" => Some(metric_row("Total Lines", summary.total_lines)),
+        "total_complexity" => Some(metric_row("Total Complexity", summary.total_complexity)),
+        "avg_complexity_per_function" => Some(metric_row_f64("Avg Complexity / Function", summary.avg_complexity_per_function, 2)),
+        "max_nesting_depth" => Some(metric_row("Max Nesting Depth", summary.max_nesting_depth)),
+        "avg_nesting_depth" => Some(metric_row_f64("Avg Nesting Depth", summary.avg_nesting_depth, 2)),
+        "avg_halstead_volume" => Some(metric_row_f64("Avg Halstead Volume", summary.avg_halstead_volume, 2)),
+        "avg_halstead_difficulty" => Some(metric_row_f64("Avg Halstead Difficulty", summary.avg_halstead_difficulty, 2)),
+        "avg_halstead_effort" => Some(metric_row_f64("Avg Halstead Effort", summary.avg_halstead_effort, 2)),
+        "avg_halstead_time" => Some(metric_row_f64("Avg Halstead Time", summary.avg_halstead_time, 2)),
+        unknown => {
+            eprintln!("Warning: unknown metric key '{}', ignoring", unknown);
+            None
+        }
+    }
 }
 
 fn format_clusters(clusters: &[DuplicateCluster]) -> String {
