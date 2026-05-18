@@ -257,3 +257,28 @@ fn test_config_introduction_appears_in_json_output() {
         "expected 'introduction' key in JSON output"
     );
 }
+
+#[test]
+fn test_config_unknown_metric_key_warns_and_succeeds() {
+    let output = lede()
+        .arg("tests/fixtures/config_unknown_key")
+        .output()
+        .expect("failed to run lede");
+
+    // Analysis must succeed
+    assert!(output.status.success(), "lede should exit 0 even with unknown metric key");
+
+    // Known key still appears in output
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Files Analyzed"), "known metric key should still render");
+
+    // Unknown key does NOT appear in output
+    assert!(!stdout.contains("totally_fake_metric"), "unknown key should not appear in output");
+
+    // Warning appears on stderr
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("totally_fake_metric"),
+        "expected warning about unknown key on stderr, got: {stderr}"
+    );
+}
