@@ -8,6 +8,13 @@ pub struct PrettyFormatter {
 impl OutputFormatter for PrettyFormatter {
     fn format(&self, results: &[FileResult], clusters: &[DuplicateCluster]) -> String {
         let mut out = String::new();
+
+        if let Some(ref intro) = self.config.introduction {
+            out.push_str(intro);
+            out.push('\n');
+            out.push('\n');
+        }
+
         if !clusters.is_empty() {
             out.push_str("Structural Duplication Candidates\n\n");
             for cluster in clusters {

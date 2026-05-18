@@ -8,9 +8,14 @@ impl OutputFormatter for MarkdownFormatter {
     fn format(&self, results: &[FileResult], clusters: &[DuplicateCluster]) -> String {
         let mut out = String::new();
 
+        if let Some(ref intro) = self.config.introduction {
+            out.push_str(intro);
+            out.push_str("\n\n");
+        }
+
         let summary = SummaryStatistics::from_results(results);
         if summary.files_analyzed > 0 {
-            out.push_str(&format_summary(&summary));
+            out.push_str(&format_summary(&summary, &self.config));
         }
 
         if !clusters.is_empty() {
@@ -18,14 +23,14 @@ impl OutputFormatter for MarkdownFormatter {
         }
 
         for file in results {
-            out.push_str(&format_file(file));
+            out.push_str(&format_file(file, &self.config));
         }
 
         out
     }
 }
 
-fn format_summary(summary: &SummaryStatistics) -> String {
+fn format_summary(summary: &SummaryStatistics, _config: &ReportConfig) -> String {
     let rows = vec![
         metric_row("Files Analyzed", summary.files_analyzed),
         metric_row("Total Functions", summary.total_functions),
@@ -50,7 +55,7 @@ fn format_summary(summary: &SummaryStatistics) -> String {
     out
 }
 
-fn format_file(file: &FileResult) -> String {
+fn format_file(file: &FileResult, _config: &ReportConfig) -> String {
     if let Some(ref err) = file.error {
         return format!("**{}**: ERROR: {}\n\n", file.path.display(), err);
     }
@@ -60,12 +65,12 @@ fn format_file(file: &FileResult) -> String {
 
     let mut out = format!("### {}\n\n", file.path.display());
     out.push_str("#### File Summary\n\n");
-    out.push_str(&format_file_summary(file));
+    out.push_str(&format_file_summary(file, _config));
     out.push_str(&format_function_table(&file.functions));
     out
 }
 
-fn format_file_summary(file: &FileResult) -> String {
+fn format_file_summary(file: &FileResult, _config: &ReportConfig) -> String {
     let fc = file.function_count;
     let avg_complexity = if fc > 0 {
         file.total_complexity as f64 / fc as f64

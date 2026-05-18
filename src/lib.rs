@@ -206,6 +206,8 @@ impl Default for SummaryStatistics {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnalysisOutput {
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub introduction: Option<String>,
     pub summary: SummaryStatistics,
     pub files: Vec<FileResult>,
     #[serde(skip_serializing_if = "Option::is_none", default)]

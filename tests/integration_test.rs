@@ -199,3 +199,37 @@ fn test_duplicate_clusters_in_output() {
         "expected markdown output to contain duplication heading"
     );
 }
+
+#[test]
+fn test_config_introduction_appears_in_markdown_output() {
+    let output = lede()
+        .arg("tests/fixtures/config_intro")
+        .output()
+        .expect("failed to run lede");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("CUSTOM INTRO TEXT FOR TESTING"),
+        "expected introduction text in output, got:\n{stdout}"
+    );
+    // introduction should appear before the summary heading
+    let intro_pos = stdout.find("CUSTOM INTRO TEXT FOR TESTING").unwrap();
+    let summary_pos = stdout.find("## Summary Statistics").unwrap_or(usize::MAX);
+    assert!(intro_pos < summary_pos, "introduction should appear before summary");
+}
+
+#[test]
+fn test_config_introduction_appears_in_json_output() {
+    let output = lede()
+        .arg("tests/fixtures/config_intro")
+        .arg("-f")
+        .arg("json")
+        .output()
+        .expect("failed to run lede");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout).expect("invalid JSON");
+    assert_eq!(
+        parsed["introduction"].as_str(),
+        Some("CUSTOM INTRO TEXT FOR TESTING"),
+        "expected 'introduction' key in JSON output"
+    );
+}

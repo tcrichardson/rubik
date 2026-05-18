@@ -9,6 +9,7 @@ impl OutputFormatter for JsonFormatter {
         let summary = SummaryStatistics::from_results(results);
 
         let output = AnalysisOutput {
+            introduction: self.config.introduction.clone(),
             summary,
             files: results.to_vec(),
             clusters: if clusters.is_empty() { None } else { Some(clusters.to_vec()) },
