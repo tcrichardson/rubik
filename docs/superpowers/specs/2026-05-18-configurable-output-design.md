@@ -157,7 +157,7 @@ pub fn get_formatter(format: &str, config: ReportConfig) -> Box<dyn OutputFormat
 
 **Introduction (all three formatters):**
 - Markdown/Pretty: if `config.introduction` is `Some(text)`, emit the text followed by a blank line before the first section
-- JSON: if `config.introduction` is `Some(text)`, add an `"introduction"` key at the top level of the JSON output object
+- JSON: `AnalysisOutput` (in `lib.rs`) gains an `introduction: Option<String>` field (serialized with `#[serde(skip_serializing_if = "Option::is_none")]`). The JSON formatter sets this field from `config.introduction` before serializing.
 
 **Project summary:**
 - If `config.project_summary_metrics` is `None` → render all metrics (current behavior)
