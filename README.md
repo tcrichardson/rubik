@@ -68,6 +68,81 @@ Options:
   -V, --version             Print version
 ```
 
+## Configuration
+
+lede reads an optional `lede.toml` file from the analyzed directory (or the source file's parent directory when analyzing a single file). Use it to add a custom introduction to the report and to select which metrics appear in the project and file summary sections.
+
+If `lede.toml` is absent or a section is omitted, all metrics are shown (default behaviour unchanged).
+
+### Example `lede.toml`
+
+~~~toml
+# Optional introduction text prepended to the report
+introduction = """
+This report analyzes the complexity of the Acme project.
+Metrics are computed per-function and aggregated per-file and project-wide.
+"""
+
+[project_summary]
+# If absent, all metrics are shown. Listed keys appear in the order specified.
+metrics = [
+  "files_analyzed",
+  "total_functions",
+  "total_complexity",
+  "avg_complexity_per_function",
+]
+
+[file_summary]
+# If absent, all metrics are shown.
+metrics = [
+  "total_functions",
+  "total_complexity",
+  "avg_complexity_per_function",
+  "max_complexity",
+  "max_nesting_depth",
+]
+~~~
+
+### Available Metric Keys
+
+**Project summary** (`[project_summary]`):
+
+| Key | Description |
+|-----|-------------|
+| `files_analyzed` | Number of files successfully analyzed |
+| `total_functions` | Total function count across all files |
+| `total_lines` | Total source lines across all files |
+| `total_complexity` | Sum of cyclomatic complexity |
+| `avg_complexity_per_function` | Average cyclomatic complexity per function |
+| `max_nesting_depth` | Deepest nesting found in any function |
+| `avg_nesting_depth` | Average nesting depth across all functions |
+| `avg_halstead_volume` | Average Halstead volume |
+| `avg_halstead_difficulty` | Average Halstead difficulty |
+| `avg_halstead_effort` | Average Halstead effort |
+| `avg_halstead_time` | Average estimated implementation time |
+
+**File summary** (`[file_summary]`):
+
+| Key | Description |
+|-----|-------------|
+| `total_functions` | Number of functions in the file |
+| `total_lines` | Total lines in the file |
+| `total_function_lines` | Sum of lines across all functions |
+| `total_complexity` | Sum of cyclomatic complexity |
+| `avg_complexity_per_function` | Average cyclomatic complexity per function |
+| `max_complexity` | Highest cyclomatic complexity in any function |
+| `max_nesting_depth` | Deepest nesting in any function |
+| `avg_nesting_depth` | Average nesting depth across functions |
+| `max_function_lines` | Length of the longest function |
+| `avg_halstead_volume` | Average Halstead volume |
+| `max_halstead_volume` | Maximum Halstead volume |
+| `avg_halstead_difficulty` | Average Halstead difficulty |
+| `max_halstead_difficulty` | Maximum Halstead difficulty |
+| `avg_halstead_effort` | Average Halstead effort |
+| `max_halstead_effort` | Maximum Halstead effort |
+| `avg_halstead_time` | Average estimated implementation time |
+| `max_halstead_time` | Maximum estimated implementation time |
+
 ## Example Output
 
 ### Pretty format (default)
