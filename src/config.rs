@@ -19,8 +19,12 @@ impl Default for ReportConfig {
 }
 
 impl ReportConfig {
+    pub fn load_from_path(path: &Path) -> Self {
+        load_from_path(path)
+    }
+
     pub fn load_from_dir(dir: &Path) -> Self {
-        load_from_dir(dir)
+        load_from_path(&dir.join("lede.toml"))
     }
 }
 
@@ -36,22 +40,21 @@ struct RawSection {
     metrics: Option<Vec<String>>,
 }
 
-pub fn load_from_dir(dir: &Path) -> ReportConfig {
-    let toml_path = dir.join("lede.toml");
-    if !toml_path.exists() {
+pub fn load_from_path(path: &Path) -> ReportConfig {
+    if !path.exists() {
         return ReportConfig::default();
     }
-    let content = match std::fs::read_to_string(&toml_path) {
+    let content = match std::fs::read_to_string(path) {
         Ok(s) => s,
         Err(e) => {
-            eprintln!("Warning: could not read lede.toml: {} — using defaults", e);
+            eprintln!("Warning: could not read {}: {} — using defaults", path.display(), e);
             return ReportConfig::default();
         }
     };
     let raw: RawConfig = match toml::from_str(&content) {
         Ok(r) => r,
         Err(e) => {
-            eprintln!("Warning: could not parse lede.toml: {} — using defaults", e);
+            eprintln!("Warning: could not parse {}: {} — using defaults", path.display(), e);
             return ReportConfig::default();
         }
     };
@@ -84,7 +87,7 @@ metrics = ["files_analyzed", "total_functions"]
 [file_summary]
 metrics = ["total_complexity", "max_nesting_depth"]
 "#);
-        let cfg = load_from_dir(&dir);
+        let cfg = ReportConfig::load_from_dir(&dir);
         assert_eq!(cfg.introduction.as_deref(), Some("Hello, this is a test report."));
         assert_eq!(
             cfg.project_summary_metrics.as_deref(),
@@ -103,7 +106,7 @@ metrics = ["total_complexity", "max_nesting_depth"]
         fs::create_dir_all(&dir).unwrap();
         // Ensure no lede.toml exists
         let _ = fs::remove_file(dir.join("lede.toml"));
-        let cfg = load_from_dir(&dir);
+        let cfg = ReportConfig::load_from_dir(&dir);
         assert!(cfg.introduction.is_none());
         assert!(cfg.project_summary_metrics.is_none());
         assert!(cfg.file_summary_metrics.is_none());
@@ -115,7 +118,7 @@ metrics = ["total_complexity", "max_nesting_depth"]
         let dir = std::env::temp_dir().join("lede_test_config_malformed");
         fs::create_dir_all(&dir).unwrap();
         write_toml(&dir, "this is not valid toml }{][");
-        let cfg = load_from_dir(&dir);
+        let cfg = ReportConfig::load_from_dir(&dir);
         assert!(cfg.introduction.is_none());
         assert!(cfg.project_summary_metrics.is_none());
         assert!(cfg.file_summary_metrics.is_none());

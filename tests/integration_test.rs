@@ -204,6 +204,8 @@ fn test_duplicate_clusters_in_output() {
 fn test_config_introduction_appears_in_markdown_output() {
     let output = lede()
         .arg("tests/fixtures/config_intro")
+        .arg("--config")
+        .arg("tests/fixtures/config_intro/lede.toml")
         .output()
         .expect("failed to run lede");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -221,6 +223,8 @@ fn test_config_introduction_appears_in_markdown_output() {
 fn test_config_metric_filtering_markdown() {
     let output = lede()
         .arg("tests/fixtures/config_filtered")
+        .arg("--config")
+        .arg("tests/fixtures/config_filtered/lede.toml")
         .output()
         .expect("failed to run lede");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -245,6 +249,8 @@ fn test_config_metric_filtering_markdown() {
 fn test_config_introduction_appears_in_json_output() {
     let output = lede()
         .arg("tests/fixtures/config_intro")
+        .arg("--config")
+        .arg("tests/fixtures/config_intro/lede.toml")
         .arg("-f")
         .arg("json")
         .output()
@@ -262,6 +268,8 @@ fn test_config_introduction_appears_in_json_output() {
 fn test_config_unknown_metric_key_warns_and_succeeds() {
     let output = lede()
         .arg("tests/fixtures/config_unknown_key")
+        .arg("--config")
+        .arg("tests/fixtures/config_unknown_key/lede.toml")
         .output()
         .expect("failed to run lede");
 

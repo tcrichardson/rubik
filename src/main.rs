@@ -15,18 +15,17 @@ struct Args {
     /// Include closures and lambda expressions in the analysis
     #[arg(long)]
     include_closures: bool,
+
+    /// Path to a lede.toml configuration file
+    #[arg(short, long)]
+    config: Option<std::path::PathBuf>,
 }
 
 fn main() {
     let args = Args::parse();
 
-    let config_dir = if args.path.is_dir() {
-        args.path.clone()
-    } else {
-        args.path.parent().unwrap_or(std::path::Path::new(".")).to_path_buf()
-    };
-
-    let config = ReportConfig::load_from_dir(&config_dir);
+    let config_path = args.config.unwrap_or_else(|| std::path::PathBuf::from("config/lede.toml"));
+    let config = ReportConfig::load_from_path(&config_path);
 
     let results = match analyze_path(&args.path, args.include_closures) {
         Ok(r) => r,

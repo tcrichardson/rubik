@@ -62,6 +62,7 @@ Arguments:
   <PATH>  Path to a file or directory to analyze
 
 Options:
+  -c, --config <CONFIG>     Path to a lede.toml configuration file
   -f, --format <FORMAT>     Output format: pretty or json [default: pretty]
       --include-closures    Include closures, lambdas, and arrow functions in the analysis
   -h, --help                Print help
@@ -70,9 +71,11 @@ Options:
 
 ## Configuration
 
-lede reads an optional `lede.toml` file from the analyzed directory (or the source file's parent directory when analyzing a single file). Use it to add a custom introduction to the report and to select which metrics appear in the project and file summary sections.
+lede uses a `lede.toml` configuration file to control the report output. By default it reads from `config/lede.toml`. You can specify a different file with the `--config` (or `-c`) option.
 
-If `lede.toml` is absent or a section is omitted, all metrics are shown (default behaviour unchanged).
+Use the configuration file to add a custom introduction to the report and to select which metrics appear in the project and file summary sections.
+
+If the configuration file is absent or a section is omitted, all metrics are shown (default behaviour unchanged).
 
 ### Example `lede.toml`
 
