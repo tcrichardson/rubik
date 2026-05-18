@@ -154,50 +154,64 @@ fn format_function_row(func: &FunctionComplexity) -> String {
     )
 }
 
+type ProjectFmt = fn(&SummaryStatistics) -> String;
+
+static PROJECT_SUMMARY_FORMATTERS: &[(&str, ProjectFmt)] = &[
+    ("files_analyzed",              |s| metric_row("Files Analyzed", s.files_analyzed)),
+    ("total_functions",             |s| metric_row("Total Functions", s.total_functions)),
+    ("total_lines",                 |s| metric_row("Total Lines", s.total_lines)),
+    ("total_complexity",            |s| metric_row("Total Complexity", s.total_complexity)),
+    ("avg_complexity_per_function", |s| metric_row_f64("Avg Complexity / Function", s.avg_complexity_per_function, 2)),
+    ("max_nesting_depth",           |s| metric_row("Max Nesting Depth", s.max_nesting_depth)),
+    ("avg_nesting_depth",           |s| metric_row_f64("Avg Nesting Depth", s.avg_nesting_depth, 2)),
+    ("avg_halstead_volume",         |s| metric_row_f64("Avg Halstead Volume", s.avg_halstead_volume, 2)),
+    ("avg_halstead_difficulty",     |s| metric_row_f64("Avg Halstead Difficulty", s.avg_halstead_difficulty, 2)),
+    ("avg_halstead_effort",         |s| metric_row_f64("Avg Halstead Effort", s.avg_halstead_effort, 2)),
+    ("avg_halstead_time",           |s| metric_row_f64("Avg Halstead Time", s.avg_halstead_time, 2)),
+];
+
 fn project_summary_row(key: &str, summary: &SummaryStatistics) -> Option<String> {
-    match key {
-        "files_analyzed" => Some(metric_row("Files Analyzed", summary.files_analyzed)),
-        "total_functions" => Some(metric_row("Total Functions", summary.total_functions)),
-        "total_lines" => Some(metric_row("Total Lines", summary.total_lines)),
-        "total_complexity" => Some(metric_row("Total Complexity", summary.total_complexity)),
-        "avg_complexity_per_function" => Some(metric_row_f64("Avg Complexity / Function", summary.avg_complexity_per_function, 2)),
-        "max_nesting_depth" => Some(metric_row("Max Nesting Depth", summary.max_nesting_depth)),
-        "avg_nesting_depth" => Some(metric_row_f64("Avg Nesting Depth", summary.avg_nesting_depth, 2)),
-        "avg_halstead_volume" => Some(metric_row_f64("Avg Halstead Volume", summary.avg_halstead_volume, 2)),
-        "avg_halstead_difficulty" => Some(metric_row_f64("Avg Halstead Difficulty", summary.avg_halstead_difficulty, 2)),
-        "avg_halstead_effort" => Some(metric_row_f64("Avg Halstead Effort", summary.avg_halstead_effort, 2)),
-        "avg_halstead_time" => Some(metric_row_f64("Avg Halstead Time", summary.avg_halstead_time, 2)),
-        unknown => {
-            eprintln!("Warning: unknown metric key '{}', ignoring", unknown);
+    PROJECT_SUMMARY_FORMATTERS
+        .iter()
+        .find(|(k, _)| *k == key)
+        .map(|(_, fmt)| fmt(summary))
+        .or_else(|| {
+            eprintln!("Warning: unknown metric key '{}', ignoring", key);
             None
-        }
-    }
+        })
 }
 
+type FileFmt = fn(&FileResult, f64) -> String;
+
+static FILE_SUMMARY_FORMATTERS: &[(&str, FileFmt)] = &[
+    ("total_functions",             |f, _| metric_row("Total Functions", f.function_count)),
+    ("total_lines",                 |f, _| metric_row("Total Lines", f.total_lines)),
+    ("total_function_lines",        |f, _| metric_row("Total Function Lines", f.total_function_lines)),
+    ("total_complexity",            |f, _| metric_row("Total Complexity", f.total_complexity)),
+    ("avg_complexity_per_function", |_, a| metric_row_f64("Avg Complexity / Function", a, 2)),
+    ("max_complexity",              |f, _| metric_row("Max Complexity", f.max_complexity)),
+    ("max_nesting_depth",           |f, _| metric_row("Max Nesting Depth", f.max_nesting_depth)),
+    ("avg_nesting_depth",           |f, _| metric_row_f64("Avg Nesting Depth", f.avg_nesting_depth, 2)),
+    ("max_function_lines",          |f, _| metric_row("Max Function Lines", f.max_function_lines)),
+    ("avg_halstead_volume",         |f, _| metric_row_f64("Avg Halstead Volume", f.avg_halstead_volume, 2)),
+    ("max_halstead_volume",         |f, _| metric_row_f64("Max Halstead Volume", f.max_halstead_volume, 2)),
+    ("avg_halstead_difficulty",     |f, _| metric_row_f64("Avg Halstead Difficulty", f.avg_halstead_difficulty, 2)),
+    ("max_halstead_difficulty",     |f, _| metric_row_f64("Max Halstead Difficulty", f.max_halstead_difficulty, 2)),
+    ("avg_halstead_effort",         |f, _| metric_row_f64("Avg Halstead Effort", f.avg_halstead_effort, 2)),
+    ("max_halstead_effort",         |f, _| metric_row_f64("Max Halstead Effort", f.max_halstead_effort, 2)),
+    ("avg_halstead_time",           |f, _| metric_row_f64("Avg Halstead Time", f.avg_halstead_time, 2)),
+    ("max_halstead_time",           |f, _| metric_row_f64("Max Halstead Time", f.max_halstead_time, 2)),
+];
+
 fn file_summary_row(key: &str, file: &FileResult, avg_complexity: f64) -> Option<String> {
-    match key {
-        "total_functions" => Some(metric_row("Total Functions", file.function_count)),
-        "total_lines" => Some(metric_row("Total Lines", file.total_lines)),
-        "total_function_lines" => Some(metric_row("Total Function Lines", file.total_function_lines)),
-        "total_complexity" => Some(metric_row("Total Complexity", file.total_complexity)),
-        "avg_complexity_per_function" => Some(metric_row_f64("Avg Complexity / Function", avg_complexity, 2)),
-        "max_complexity" => Some(metric_row("Max Complexity", file.max_complexity)),
-        "max_nesting_depth" => Some(metric_row("Max Nesting Depth", file.max_nesting_depth)),
-        "avg_nesting_depth" => Some(metric_row_f64("Avg Nesting Depth", file.avg_nesting_depth, 2)),
-        "max_function_lines" => Some(metric_row("Max Function Lines", file.max_function_lines)),
-        "avg_halstead_volume" => Some(metric_row_f64("Avg Halstead Volume", file.avg_halstead_volume, 2)),
-        "max_halstead_volume" => Some(metric_row_f64("Max Halstead Volume", file.max_halstead_volume, 2)),
-        "avg_halstead_difficulty" => Some(metric_row_f64("Avg Halstead Difficulty", file.avg_halstead_difficulty, 2)),
-        "max_halstead_difficulty" => Some(metric_row_f64("Max Halstead Difficulty", file.max_halstead_difficulty, 2)),
-        "avg_halstead_effort" => Some(metric_row_f64("Avg Halstead Effort", file.avg_halstead_effort, 2)),
-        "max_halstead_effort" => Some(metric_row_f64("Max Halstead Effort", file.max_halstead_effort, 2)),
-        "avg_halstead_time" => Some(metric_row_f64("Avg Halstead Time", file.avg_halstead_time, 2)),
-        "max_halstead_time" => Some(metric_row_f64("Max Halstead Time", file.max_halstead_time, 2)),
-        unknown => {
-            eprintln!("Warning: unknown metric key '{}', ignoring", unknown);
+    FILE_SUMMARY_FORMATTERS
+        .iter()
+        .find(|(k, _)| *k == key)
+        .map(|(_, fmt)| fmt(file, avg_complexity))
+        .or_else(|| {
+            eprintln!("Warning: unknown metric key '{}', ignoring", key);
             None
-        }
-    }
+        })
 }
 
 fn format_clusters(clusters: &[DuplicateCluster]) -> String {
