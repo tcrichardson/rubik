@@ -1,6 +1,6 @@
 use crate::{
     FileResult,
-    language::{c::CAnalyzer, javascript::JavaScriptAnalyzer, python::PythonAnalyzer, rust::RustAnalyzer, typescript::TypeScriptAnalyzer, LanguageAnalyzer},
+    language::{c::CAnalyzer, java::JavaAnalyzer, javascript::JavaScriptAnalyzer, python::PythonAnalyzer, rust::RustAnalyzer, typescript::TypeScriptAnalyzer, LanguageAnalyzer},
 };
 use std::path::Path;
 use walkdir::WalkDir;
@@ -11,6 +11,7 @@ static ANALYZERS: &[&dyn LanguageAnalyzer] = &[
     &JavaScriptAnalyzer,
     &TypeScriptAnalyzer,
     &CAnalyzer,
+    &JavaAnalyzer,
 ];
 
 pub fn analyze_path(path: &Path, include_closures: bool) -> Result<Vec<FileResult>, std::io::Error> {

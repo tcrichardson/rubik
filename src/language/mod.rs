@@ -145,6 +145,7 @@ pub fn make_parser(language: tree_sitter::Language) -> Result<Parser, String> {
 }
 
 pub mod c;
+pub mod java;
 pub mod javascript;
 mod javascript_like;
 pub mod python;

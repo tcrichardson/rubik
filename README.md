@@ -1,10 +1,10 @@
 # Lede
 
-A fast CLI tool that computes cyclomatic code complexity and Halstead metrics for Rust, Python, JavaScript, and C source files. It reports complexity and cognitive metrics per function and per file. By default, closures and anonymous functions are excluded from analysis so they don't skew aggregate metrics — you can opt to include them with `--include-closures`.
+A fast CLI tool that computes cyclomatic code complexity and Halstead metrics for Rust, Python, JavaScript, TypeScript, C, and Java source files. It reports complexity and cognitive metrics per function and per file. By default, closures and anonymous functions are excluded from analysis so they don't skew aggregate metrics — you can opt to include them with `--include-closures`.
 
 ## Features
 
-- **Multi-language support:** Rust, Python, JavaScript/JSX, TypeScript/TSX, and C
+- **Multi-language support:** Rust, Python, JavaScript/JSX, TypeScript/TSX, C, and Java
 - **Cyclomatic complexity:** Classic decision-point counting per function and file
 - **Halstead metrics:** Volume, difficulty, effort, and estimated time per function
 - **Nesting depth analysis:** Maximum and average control-flow nesting per function and file
@@ -253,17 +253,17 @@ metrics = [
 
 For each function or closure, complexity starts at **1** and increments by **1** for each decision point:
 
-| Decision Point | Rust | Python | JavaScript | TypeScript | C |
-|---|---|---|---|---|---|
-| `if` / `elif` | `if_expression` | `if_statement`, `elif_clause` | `if_statement` | `if_statement` | `if_statement` |
-| `match` / `switch` / `case` | `match_expression` (per arm) | `match_statement` (per case) | `switch_statement` (per case) | `switch_statement` (per case) | `case_statement` |
-| `for` | `for_expression` | `for_statement` | `for_statement` | `for_statement` | `for_statement` |
-| `while` | `while_expression` | `while_statement` | `while_statement`, `do_statement` | `while_statement`, `do_statement` | `while_statement`, `do_statement` |
-| `loop` | `loop_expression` | — | — | — | — |
-| `try` / `except` / `catch` | `try_expression` | `except_clause` | `catch_clause` | `catch_clause` | — |
-| `&&` / `\|\|` | binary operators | `and` / `or` | binary operators | binary operators | binary operators |
-| Ternary | — | `conditional_expression` | `ternary_expression` | `ternary_expression` | `conditional_expression` |
-| Lambda / Closure* | `closure_expression` | `lambda` | `arrow_function` | `arrow_function` | — |
+| Decision Point | Rust | Python | JavaScript | TypeScript | C | Java |
+|---|---|---|---|---|---|---|
+| `if` / `elif` | `if_expression` | `if_statement`, `elif_clause` | `if_statement` | `if_statement` | `if_statement` | `if_statement` |
+| `match` / `switch` / `case` | `match_expression` (per arm) | `match_statement` (per case) | `switch_statement` (per case) | `switch_statement` (per case) | `case_statement` | `switch_label` |
+| `for` | `for_expression` | `for_statement` | `for_statement` | `for_statement` | `for_statement` | `for_statement`, `enhanced_for_statement` |
+| `while` | `while_expression` | `while_statement` | `while_statement`, `do_statement` | `while_statement`, `do_statement` | `while_statement`, `do_statement` | `while_statement`, `do_statement` |
+| `loop` | `loop_expression` | — | — | — | — | — |
+| `try` / `except` / `catch` | `try_expression` | `except_clause` | `catch_clause` | `catch_clause` | — | `catch_clause` |
+| `&&` / `\|\|` | binary operators | `and` / `or` | binary operators | binary operators | binary operators | binary operators |
+| Ternary | — | `conditional_expression` | `ternary_expression` | `ternary_expression` | `conditional_expression` | `ternary_expression` |
+| Lambda / Closure* | `closure_expression` | `lambda` | `arrow_function` | `arrow_function` | — | `lambda_expression` |
 
 \* Only counted when `--include-closures` is passed. By default, closures are excluded so they don't inflate function counts or dilute average metrics.
 
@@ -305,6 +305,7 @@ When analyzing multiple files, the JSON and pretty output include a top-level su
 | JavaScript | `.js`, `.jsx` |
 | TypeScript | `.ts`, `.tsx` |
 | C | `.c`, `.h` |
+| Java | `.java` |
 
 Files with unsupported extensions are silently skipped.
 
@@ -317,8 +318,8 @@ cargo test
 ```
 
 The suite includes:
-- **Unit tests** for each language analyzer and the cognitive metrics module (46 tests)
-- **Integration tests** that exercise the CLI against fixture files (9 tests)
+- **Unit tests** for each language analyzer and the cognitive metrics module (61 tests)
+- **Integration tests** that exercise the CLI against fixture files (13 tests)
 
 ## Architecture
 
