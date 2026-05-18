@@ -302,6 +302,7 @@ impl SummaryStatistics {
 pub mod analyzer;
 pub mod cognitive;
 pub mod complexity;
+pub mod config;
 pub mod duplicates;
 pub mod language;
 pub mod output;
