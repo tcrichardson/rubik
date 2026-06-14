@@ -152,7 +152,11 @@ impl FileResult {
         }
     }
 
-    pub fn from_functions(path: &Path, total_lines: usize, functions: Vec<FunctionComplexity>) -> Self {
+    pub fn from_functions(
+        path: &Path,
+        total_lines: usize,
+        functions: Vec<FunctionComplexity>,
+    ) -> Self {
         let count = functions.len();
         if count == 0 {
             return Self {

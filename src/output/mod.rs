@@ -1,6 +1,6 @@
+use crate::FileResult;
 use crate::config::ReportConfig;
 use crate::duplicates::DuplicateCluster;
-use crate::FileResult;
 
 pub trait OutputFormatter {
     fn format(&self, results: &[FileResult], clusters: &[DuplicateCluster]) -> String;

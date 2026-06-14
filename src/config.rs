@@ -1,5 +1,5 @@
-use std::path::Path;
 use serde::Deserialize;
+use std::path::Path;
 
 #[derive(Debug, Clone)]
 pub struct ReportConfig {
@@ -47,14 +47,22 @@ pub fn load_from_path(path: &Path) -> ReportConfig {
     let content = match std::fs::read_to_string(path) {
         Ok(s) => s,
         Err(e) => {
-            eprintln!("Warning: could not read {}: {} — using defaults", path.display(), e);
+            eprintln!(
+                "Warning: could not read {}: {} — using defaults",
+                path.display(),
+                e
+            );
             return ReportConfig::default();
         }
     };
     let raw: RawConfig = match toml::from_str(&content) {
         Ok(r) => r,
         Err(e) => {
-            eprintln!("Warning: could not parse {}: {} — using defaults", path.display(), e);
+            eprintln!(
+                "Warning: could not parse {}: {} — using defaults",
+                path.display(),
+                e
+            );
             return ReportConfig::default();
         }
     };
@@ -78,7 +86,9 @@ mod tests {
     fn test_load_valid_config() {
         let dir = std::env::temp_dir().join("lede_test_config_valid");
         fs::create_dir_all(&dir).unwrap();
-        write_toml(&dir, r#"
+        write_toml(
+            &dir,
+            r#"
 introduction = "Hello, this is a test report."
 
 [project_summary]
@@ -86,16 +96,25 @@ metrics = ["files_analyzed", "total_functions"]
 
 [file_summary]
 metrics = ["total_complexity", "max_nesting_depth"]
-"#);
+"#,
+        );
         let cfg = ReportConfig::load_from_dir(&dir);
-        assert_eq!(cfg.introduction.as_deref(), Some("Hello, this is a test report."));
+        assert_eq!(
+            cfg.introduction.as_deref(),
+            Some("Hello, this is a test report.")
+        );
         assert_eq!(
             cfg.project_summary_metrics.as_deref(),
             Some(&["files_analyzed".to_string(), "total_functions".to_string()][..])
         );
         assert_eq!(
             cfg.file_summary_metrics.as_deref(),
-            Some(&["total_complexity".to_string(), "max_nesting_depth".to_string()][..])
+            Some(
+                &[
+                    "total_complexity".to_string(),
+                    "max_nesting_depth".to_string()
+                ][..]
+            )
         );
         fs::remove_dir_all(&dir).unwrap();
     }

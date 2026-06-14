@@ -21,14 +21,40 @@ const DECISION_KINDS: &[&str] = &[
     "ternary_expression",
 ];
 const OPERATOR_KINDS: &[&str] = &[
-    "+", "-", "*", "/", "%",
-    "==", "!=", "<", ">", "<=", ">=",
-    "&&", "||", "!",
-    "=", "+=", "-=", "*=", "/=", "%=",
-    "&", "|", "^", "<<", ">>", ">>>", "~",
-    ".", "::",
-    "return_statement", "break_statement", "continue_statement",
-    "throw_statement", "yield_statement",
+    "+",
+    "-",
+    "*",
+    "/",
+    "%",
+    "==",
+    "!=",
+    "<",
+    ">",
+    "<=",
+    ">=",
+    "&&",
+    "||",
+    "!",
+    "=",
+    "+=",
+    "-=",
+    "*=",
+    "/=",
+    "%=",
+    "&",
+    "|",
+    "^",
+    "<<",
+    ">>",
+    ">>>",
+    "~",
+    ".",
+    "::",
+    "return_statement",
+    "break_statement",
+    "continue_statement",
+    "throw_statement",
+    "yield_statement",
     "instanceof_expression",
 ];
 const OPERAND_KINDS: &[&str] = &[
@@ -156,7 +182,10 @@ mod tests {
         let analyzer = JavaAnalyzer;
         let result = analyzer.analyze(source, true).unwrap();
         assert_eq!(result.len(), 2);
-        let lambda = result.iter().find(|f| f.name.starts_with("<lambda>")).unwrap();
+        let lambda = result
+            .iter()
+            .find(|f| f.name.starts_with("<lambda>"))
+            .unwrap();
         assert_eq!(lambda.complexity, 2);
     }
 

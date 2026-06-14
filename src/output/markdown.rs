@@ -1,4 +1,7 @@
-use crate::{FileResult, FunctionComplexity, SummaryStatistics, config::ReportConfig, duplicates::DuplicateCluster, output::OutputFormatter};
+use crate::{
+    FileResult, FunctionComplexity, SummaryStatistics, config::ReportConfig,
+    duplicates::DuplicateCluster, output::OutputFormatter,
+};
 
 pub struct MarkdownFormatter {
     pub config: ReportConfig,
@@ -37,11 +40,19 @@ fn format_summary(summary: &SummaryStatistics, config: &ReportConfig) -> String 
             metric_row("Total Functions", summary.total_functions),
             metric_row("Total Lines", summary.total_lines),
             metric_row("Total Complexity", summary.total_complexity),
-            metric_row_f64("Avg Complexity / Function", summary.avg_complexity_per_function, 2),
+            metric_row_f64(
+                "Avg Complexity / Function",
+                summary.avg_complexity_per_function,
+                2,
+            ),
             metric_row("Max Nesting Depth", summary.max_nesting_depth),
             metric_row_f64("Avg Nesting Depth", summary.avg_nesting_depth, 2),
             metric_row_f64("Avg Halstead Volume", summary.avg_halstead_volume, 2),
-            metric_row_f64("Avg Halstead Difficulty", summary.avg_halstead_difficulty, 2),
+            metric_row_f64(
+                "Avg Halstead Difficulty",
+                summary.avg_halstead_difficulty,
+                2,
+            ),
             metric_row_f64("Avg Halstead Effort", summary.avg_halstead_effort, 2),
             metric_row_f64("Avg Halstead Time", summary.avg_halstead_time, 2),
         ],
@@ -157,17 +168,41 @@ fn format_function_row(func: &FunctionComplexity) -> String {
 type ProjectFmt = fn(&SummaryStatistics) -> String;
 
 static PROJECT_SUMMARY_FORMATTERS: &[(&str, ProjectFmt)] = &[
-    ("files_analyzed",              |s| metric_row("Files Analyzed", s.files_analyzed)),
-    ("total_functions",             |s| metric_row("Total Functions", s.total_functions)),
-    ("total_lines",                 |s| metric_row("Total Lines", s.total_lines)),
-    ("total_complexity",            |s| metric_row("Total Complexity", s.total_complexity)),
-    ("avg_complexity_per_function", |s| metric_row_f64("Avg Complexity / Function", s.avg_complexity_per_function, 2)),
-    ("max_nesting_depth",           |s| metric_row("Max Nesting Depth", s.max_nesting_depth)),
-    ("avg_nesting_depth",           |s| metric_row_f64("Avg Nesting Depth", s.avg_nesting_depth, 2)),
-    ("avg_halstead_volume",         |s| metric_row_f64("Avg Halstead Volume", s.avg_halstead_volume, 2)),
-    ("avg_halstead_difficulty",     |s| metric_row_f64("Avg Halstead Difficulty", s.avg_halstead_difficulty, 2)),
-    ("avg_halstead_effort",         |s| metric_row_f64("Avg Halstead Effort", s.avg_halstead_effort, 2)),
-    ("avg_halstead_time",           |s| metric_row_f64("Avg Halstead Time", s.avg_halstead_time, 2)),
+    ("files_analyzed", |s| {
+        metric_row("Files Analyzed", s.files_analyzed)
+    }),
+    ("total_functions", |s| {
+        metric_row("Total Functions", s.total_functions)
+    }),
+    ("total_lines", |s| metric_row("Total Lines", s.total_lines)),
+    ("total_complexity", |s| {
+        metric_row("Total Complexity", s.total_complexity)
+    }),
+    ("avg_complexity_per_function", |s| {
+        metric_row_f64(
+            "Avg Complexity / Function",
+            s.avg_complexity_per_function,
+            2,
+        )
+    }),
+    ("max_nesting_depth", |s| {
+        metric_row("Max Nesting Depth", s.max_nesting_depth)
+    }),
+    ("avg_nesting_depth", |s| {
+        metric_row_f64("Avg Nesting Depth", s.avg_nesting_depth, 2)
+    }),
+    ("avg_halstead_volume", |s| {
+        metric_row_f64("Avg Halstead Volume", s.avg_halstead_volume, 2)
+    }),
+    ("avg_halstead_difficulty", |s| {
+        metric_row_f64("Avg Halstead Difficulty", s.avg_halstead_difficulty, 2)
+    }),
+    ("avg_halstead_effort", |s| {
+        metric_row_f64("Avg Halstead Effort", s.avg_halstead_effort, 2)
+    }),
+    ("avg_halstead_time", |s| {
+        metric_row_f64("Avg Halstead Time", s.avg_halstead_time, 2)
+    }),
 ];
 
 fn project_summary_row(key: &str, summary: &SummaryStatistics) -> Option<String> {
@@ -184,23 +219,57 @@ fn project_summary_row(key: &str, summary: &SummaryStatistics) -> Option<String>
 type FileFmt = fn(&FileResult, f64) -> String;
 
 static FILE_SUMMARY_FORMATTERS: &[(&str, FileFmt)] = &[
-    ("total_functions",             |f, _| metric_row("Total Functions", f.function_count)),
-    ("total_lines",                 |f, _| metric_row("Total Lines", f.total_lines)),
-    ("total_function_lines",        |f, _| metric_row("Total Function Lines", f.total_function_lines)),
-    ("total_complexity",            |f, _| metric_row("Total Complexity", f.total_complexity)),
-    ("avg_complexity_per_function", |_, a| metric_row_f64("Avg Complexity / Function", a, 2)),
-    ("max_complexity",              |f, _| metric_row("Max Complexity", f.max_complexity)),
-    ("max_nesting_depth",           |f, _| metric_row("Max Nesting Depth", f.max_nesting_depth)),
-    ("avg_nesting_depth",           |f, _| metric_row_f64("Avg Nesting Depth", f.avg_nesting_depth, 2)),
-    ("max_function_lines",          |f, _| metric_row("Max Function Lines", f.max_function_lines)),
-    ("avg_halstead_volume",         |f, _| metric_row_f64("Avg Halstead Volume", f.avg_halstead_volume, 2)),
-    ("max_halstead_volume",         |f, _| metric_row_f64("Max Halstead Volume", f.max_halstead_volume, 2)),
-    ("avg_halstead_difficulty",     |f, _| metric_row_f64("Avg Halstead Difficulty", f.avg_halstead_difficulty, 2)),
-    ("max_halstead_difficulty",     |f, _| metric_row_f64("Max Halstead Difficulty", f.max_halstead_difficulty, 2)),
-    ("avg_halstead_effort",         |f, _| metric_row_f64("Avg Halstead Effort", f.avg_halstead_effort, 2)),
-    ("max_halstead_effort",         |f, _| metric_row_f64("Max Halstead Effort", f.max_halstead_effort, 2)),
-    ("avg_halstead_time",           |f, _| metric_row_f64("Avg Halstead Time", f.avg_halstead_time, 2)),
-    ("max_halstead_time",           |f, _| metric_row_f64("Max Halstead Time", f.max_halstead_time, 2)),
+    ("total_functions", |f, _| {
+        metric_row("Total Functions", f.function_count)
+    }),
+    ("total_lines", |f, _| {
+        metric_row("Total Lines", f.total_lines)
+    }),
+    ("total_function_lines", |f, _| {
+        metric_row("Total Function Lines", f.total_function_lines)
+    }),
+    ("total_complexity", |f, _| {
+        metric_row("Total Complexity", f.total_complexity)
+    }),
+    ("avg_complexity_per_function", |_, a| {
+        metric_row_f64("Avg Complexity / Function", a, 2)
+    }),
+    ("max_complexity", |f, _| {
+        metric_row("Max Complexity", f.max_complexity)
+    }),
+    ("max_nesting_depth", |f, _| {
+        metric_row("Max Nesting Depth", f.max_nesting_depth)
+    }),
+    ("avg_nesting_depth", |f, _| {
+        metric_row_f64("Avg Nesting Depth", f.avg_nesting_depth, 2)
+    }),
+    ("max_function_lines", |f, _| {
+        metric_row("Max Function Lines", f.max_function_lines)
+    }),
+    ("avg_halstead_volume", |f, _| {
+        metric_row_f64("Avg Halstead Volume", f.avg_halstead_volume, 2)
+    }),
+    ("max_halstead_volume", |f, _| {
+        metric_row_f64("Max Halstead Volume", f.max_halstead_volume, 2)
+    }),
+    ("avg_halstead_difficulty", |f, _| {
+        metric_row_f64("Avg Halstead Difficulty", f.avg_halstead_difficulty, 2)
+    }),
+    ("max_halstead_difficulty", |f, _| {
+        metric_row_f64("Max Halstead Difficulty", f.max_halstead_difficulty, 2)
+    }),
+    ("avg_halstead_effort", |f, _| {
+        metric_row_f64("Avg Halstead Effort", f.avg_halstead_effort, 2)
+    }),
+    ("max_halstead_effort", |f, _| {
+        metric_row_f64("Max Halstead Effort", f.max_halstead_effort, 2)
+    }),
+    ("avg_halstead_time", |f, _| {
+        metric_row_f64("Avg Halstead Time", f.avg_halstead_time, 2)
+    }),
+    ("max_halstead_time", |f, _| {
+        metric_row_f64("Max Halstead Time", f.max_halstead_time, 2)
+    }),
 ];
 
 fn file_summary_row(key: &str, file: &FileResult, avg_complexity: f64) -> Option<String> {
@@ -219,9 +288,16 @@ fn format_clusters(clusters: &[DuplicateCluster]) -> String {
     for cluster in clusters {
         let n = cluster.instances.len();
         let suffix = if n == 1 { "" } else { "es" };
-        out.push_str(&format!("### {} ({} exact match{})\n\n", cluster.name, n, suffix));
-        out.push_str("| File | Line | Complexity | Lines | Halstead Volume | Halstead Difficulty |\n");
-        out.push_str("|------|------|------------|-------|-----------------|---------------------|\n");
+        out.push_str(&format!(
+            "### {} ({} exact match{})\n\n",
+            cluster.name, n, suffix
+        ));
+        out.push_str(
+            "| File | Line | Complexity | Lines | Halstead Volume | Halstead Difficulty |\n",
+        );
+        out.push_str(
+            "|------|------|------------|-------|-----------------|---------------------|\n",
+        );
         for inst in &cluster.instances {
             out.push_str(&format!(
                 "| {} | {} | {} | {} | {:.2} | {:.2} |\n",

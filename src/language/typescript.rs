@@ -1,5 +1,5 @@
 use crate::language::javascript_like::{
-    extract_name, CLOSURE_KINDS, DECISION_KINDS, FUNCTION_KINDS, OPERAND_KINDS, OPERATOR_KINDS,
+    CLOSURE_KINDS, DECISION_KINDS, FUNCTION_KINDS, OPERAND_KINDS, OPERATOR_KINDS, extract_name,
 };
 use crate::language::{LanguageAnalyzer, LanguageConfig};
 use std::path::Path;
@@ -58,7 +58,8 @@ mod tests {
 
     #[test]
     fn test_switch() {
-        let source = "function baz() { switch(x) { case 1: break; case 2: break; default: break; } }";
+        let source =
+            "function baz() { switch(x) { case 1: break; case 2: break; default: break; } }";
         let analyzer = TypeScriptAnalyzer;
         let result = analyzer.analyze(source, false).unwrap();
         assert_eq!(result[0].complexity, 4); // base 1 + 3 cases

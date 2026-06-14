@@ -16,16 +16,50 @@ const DECISION_KINDS: &[&str] = &[
     "match_arm",
 ];
 const OPERATOR_KINDS: &[&str] = &[
-    "+", "-", "*", "/", "%", "&&", "||", "!", "==", "!=", "<", ">", "<=", ">=",
-    "=", "+=", "-=" , "*=", "/=", "%=",
-    "&", "|", "^", "<<", ">>",
-    ".", "..", "...", "->", "=>",
-    "return_expression", "break_expression", "continue_expression",
-    "await_expression", "try_expression",
+    "+",
+    "-",
+    "*",
+    "/",
+    "%",
+    "&&",
+    "||",
+    "!",
+    "==",
+    "!=",
+    "<",
+    ">",
+    "<=",
+    ">=",
+    "=",
+    "+=",
+    "-=",
+    "*=",
+    "/=",
+    "%=",
+    "&",
+    "|",
+    "^",
+    "<<",
+    ">>",
+    ".",
+    "..",
+    "...",
+    "->",
+    "=>",
+    "return_expression",
+    "break_expression",
+    "continue_expression",
+    "await_expression",
+    "try_expression",
 ];
 const OPERAND_KINDS: &[&str] = &[
-    "identifier", "integer_literal", "float_literal", "string_literal",
-    "char_literal", "bool_literal", "self",
+    "identifier",
+    "integer_literal",
+    "float_literal",
+    "string_literal",
+    "char_literal",
+    "bool_literal",
+    "self",
 ];
 
 impl LanguageAnalyzer for RustAnalyzer {
@@ -118,7 +152,10 @@ fn baz() {
         let analyzer = RustAnalyzer;
         let result = analyzer.analyze(source, true).unwrap();
         assert_eq!(result.len(), 2);
-        let closure = result.iter().find(|f| f.name.starts_with("<closure>")).unwrap();
+        let closure = result
+            .iter()
+            .find(|f| f.name.starts_with("<closure>"))
+            .unwrap();
         assert_eq!(closure.complexity, 2);
     }
 

@@ -1,4 +1,4 @@
-# Lede
+# amiextra
 
 A fast CLI tool that computes cyclomatic code complexity and Halstead metrics for Rust, Python, JavaScript, TypeScript, C, and Java source files. It reports complexity and cognitive metrics per function and per file. By default, closures and anonymous functions are excluded from analysis so they don't skew aggregate metrics — you can opt to include them with `--include-closures`.
 
@@ -20,43 +20,43 @@ A fast CLI tool that computes cyclomatic code complexity and Halstead metrics fo
 Build from source with Cargo:
 
 ```bash
-git clone https://github.com/tcrichardson/lede
-cd lede
+git clone https://github.com/tcrichardson/amiextra
+cd amiextra
 cargo build --release
 ```
 
-The binary will be available at `target/release/lede`.
+The binary will be available at `target/release/amiextra`.
 
 ## Usage
 
 Analyze a single file:
 
 ```bash
-lede src/main.rs
+amiextra src/main.rs
 ```
 
 Analyze an entire directory:
 
 ```bash
-lede src/
+amiextra src/
 ```
 
 Output as JSON:
 
 ```bash
-lede src/ -f json
+amiextra src/ -f json
 ```
 
 Include closures and lambdas in the analysis:
 
 ```bash
-lede src/ --include-closures
+amiextra src/ --include-closures
 ```
 
 ### CLI Options
 
 ```
-Usage: lede [OPTIONS] <PATH>
+Usage: amiextra [OPTIONS] <PATH>
 
 Arguments:
   <PATH>  Path to a file or directory to analyze
@@ -71,7 +71,7 @@ Options:
 
 ## Configuration
 
-lede uses a `lede.toml` configuration file to control the report output. By default it reads from `config/lede.toml`. You can specify a different file with the `--config` (or `-c`) option.
+amiextra uses a `lede.toml` configuration file to control the report output. By default it reads from `config/lede.toml`. You can specify a different file with the `--config` (or `-c`) option.
 
 Use the configuration file to add a custom introduction to the report and to select which metrics appear in the project and file summary sections.
 

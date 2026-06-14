@@ -1,6 +1,9 @@
 use crate::{
     FileResult,
-    language::{c::CAnalyzer, java::JavaAnalyzer, javascript::JavaScriptAnalyzer, python::PythonAnalyzer, rust::RustAnalyzer, typescript::TypeScriptAnalyzer, LanguageAnalyzer},
+    language::{
+        LanguageAnalyzer, c::CAnalyzer, java::JavaAnalyzer, javascript::JavaScriptAnalyzer,
+        python::PythonAnalyzer, rust::RustAnalyzer, typescript::TypeScriptAnalyzer,
+    },
 };
 use std::path::Path;
 use walkdir::WalkDir;
@@ -14,7 +17,10 @@ static ANALYZERS: &[&dyn LanguageAnalyzer] = &[
     &JavaAnalyzer,
 ];
 
-pub fn analyze_path(path: &Path, include_closures: bool) -> Result<Vec<FileResult>, std::io::Error> {
+pub fn analyze_path(
+    path: &Path,
+    include_closures: bool,
+) -> Result<Vec<FileResult>, std::io::Error> {
     if path.is_file() {
         Ok(vec![analyze_file(path, include_closures)?])
     } else if path.is_dir() {
@@ -27,7 +33,10 @@ pub fn analyze_path(path: &Path, include_closures: bool) -> Result<Vec<FileResul
     }
 }
 
-fn analyze_directory(path: &Path, include_closures: bool) -> Result<Vec<FileResult>, std::io::Error> {
+fn analyze_directory(
+    path: &Path,
+    include_closures: bool,
+) -> Result<Vec<FileResult>, std::io::Error> {
     let mut results = Vec::new();
     for entry in WalkDir::new(path) {
         let entry = match entry {
@@ -55,7 +64,9 @@ fn analyze_file(path: &Path, include_closures: bool) -> Result<FileResult, std::
     for analyzer in ANALYZERS {
         if analyzer.can_analyze(path) {
             match analyzer.analyze(&source, include_closures) {
-                Ok(functions) => return Ok(FileResult::from_functions(path, total_lines, functions)),
+                Ok(functions) => {
+                    return Ok(FileResult::from_functions(path, total_lines, functions));
+                }
                 Err(e) => return Ok(build_error_result(path, total_lines, e)),
             }
         }

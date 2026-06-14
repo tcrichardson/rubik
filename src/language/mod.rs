@@ -26,7 +26,11 @@ pub trait LanguageAnalyzer: Send + Sync {
     fn language_name(&self) -> &'static str {
         "source"
     }
-    fn analyze(&self, source: &str, include_closures: bool) -> Result<Vec<FunctionComplexity>, String> {
+    fn analyze(
+        &self,
+        source: &str,
+        include_closures: bool,
+    ) -> Result<Vec<FunctionComplexity>, String> {
         let mut parser = self.parser()?;
         let config = self.config();
         let msg = format!("Failed to parse {} source", self.language_name());
@@ -35,7 +39,13 @@ pub trait LanguageAnalyzer: Send + Sync {
             return Err(msg);
         }
         let mut functions = Vec::new();
-        collect_functions(tree.root_node(), source, &mut functions, &config, include_closures);
+        collect_functions(
+            tree.root_node(),
+            source,
+            &mut functions,
+            &config,
+            include_closures,
+        );
         Ok(functions)
     }
 }
@@ -126,10 +136,20 @@ pub fn count_decisions(
         }
         for (container, case_kind) in match_case_kinds {
             if child.kind() == *container {
-                count += crate::complexity::count_descendants_of_kind(child, &[case_kind], function_kinds);
+                count += crate::complexity::count_descendants_of_kind(
+                    child,
+                    &[case_kind],
+                    function_kinds,
+                );
             }
         }
-        count += count_decisions(child, source, decision_kinds, function_kinds, match_case_kinds);
+        count += count_decisions(
+            child,
+            source,
+            decision_kinds,
+            function_kinds,
+            match_case_kinds,
+        );
     }
     count
 }

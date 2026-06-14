@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-use serde::{Deserialize, Serialize};
 use crate::{FileResult, FunctionComplexity};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DuplicateCluster {
@@ -24,7 +24,10 @@ pub fn compute_duplicates(results: &[FileResult]) -> Vec<DuplicateCluster> {
 
     for file in results {
         for func in &file.functions {
-            by_name.entry(func.name.clone()).or_default().push((file, func));
+            by_name
+                .entry(func.name.clone())
+                .or_default()
+                .push((file, func));
         }
     }
 
@@ -82,7 +85,14 @@ mod tests {
     use super::*;
     use crate::FunctionComplexity;
 
-    fn make_func(name: &str, lines: usize, complexity: u32, nesting: u32, volume: f64, difficulty: f64) -> FunctionComplexity {
+    fn make_func(
+        name: &str,
+        lines: usize,
+        complexity: u32,
+        nesting: u32,
+        volume: f64,
+        difficulty: f64,
+    ) -> FunctionComplexity {
         FunctionComplexity {
             name: name.to_string(),
             line_start: 1,

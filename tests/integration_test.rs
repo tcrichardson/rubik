@@ -1,5 +1,5 @@
-use std::process::Command;
 use lede::output::OutputFormatter;
+use std::process::Command;
 
 fn lede() -> Command {
     let mut cmd = Command::new("cargo");
@@ -159,7 +159,11 @@ fn test_directory_scan() {
         .expect("failed to run lede");
     let stdout = String::from_utf8_lossy(&output.stdout);
     let parsed: lede::AnalysisOutput = serde_json::from_str(&stdout).expect("invalid JSON");
-    let paths: Vec<String> = parsed.files.iter().map(|r| r.path.to_string_lossy().to_string()).collect();
+    let paths: Vec<String> = parsed
+        .files
+        .iter()
+        .map(|r| r.path.to_string_lossy().to_string())
+        .collect();
     assert!(paths.iter().any(|p| p.contains("rust_sample.rs")));
     assert!(paths.iter().any(|p| p.contains("python_sample.py")));
     assert!(paths.iter().any(|p| p.contains("js_sample.js")));
@@ -170,15 +174,15 @@ fn test_directory_scan() {
 
 #[test]
 fn test_duplicate_clusters_in_output() {
-    let results = lede::analyze_path(
-        std::path::Path::new("tests/fixtures/duplicates/"),
-        false,
-    )
-    .expect("failed to analyze duplicates directory");
+    let results = lede::analyze_path(std::path::Path::new("tests/fixtures/duplicates/"), false)
+        .expect("failed to analyze duplicates directory");
 
     let clusters = lede::duplicates::compute_duplicates(&results);
 
-    assert!(!clusters.is_empty(), "expected at least one duplicate cluster");
+    assert!(
+        !clusters.is_empty(),
+        "expected at least one duplicate cluster"
+    );
 
     let duplicated_cluster = clusters
         .iter()
@@ -192,7 +196,9 @@ fn test_duplicate_clusters_in_output() {
     );
 
     // Also verify markdown output contains the duplication section
-    let formatter = lede::output::markdown::MarkdownFormatter { config: lede::config::ReportConfig::default() };
+    let formatter = lede::output::markdown::MarkdownFormatter {
+        config: lede::config::ReportConfig::default(),
+    };
     let output = formatter.format(&results, &clusters);
     assert!(
         output.contains("Structural Duplication Candidates"),
@@ -216,7 +222,10 @@ fn test_config_introduction_appears_in_markdown_output() {
     // introduction should appear before the summary heading
     let intro_pos = stdout.find("CUSTOM INTRO TEXT FOR TESTING").unwrap();
     let summary_pos = stdout.find("## Summary Statistics").unwrap_or(usize::MAX);
-    assert!(intro_pos < summary_pos, "introduction should appear before summary");
+    assert!(
+        intro_pos < summary_pos,
+        "introduction should appear before summary"
+    );
 }
 
 #[test]
@@ -230,19 +239,43 @@ fn test_config_metric_filtering_markdown() {
     let stdout = String::from_utf8_lossy(&output.stdout);
 
     // Project summary: only "files_analyzed" and "total_complexity" should appear
-    assert!(stdout.contains("Files Analyzed"), "expected Files Analyzed in output");
-    assert!(stdout.contains("Total Complexity"), "expected Total Complexity in output");
+    assert!(
+        stdout.contains("Files Analyzed"),
+        "expected Files Analyzed in output"
+    );
+    assert!(
+        stdout.contains("Total Complexity"),
+        "expected Total Complexity in output"
+    );
 
     // File summary: only "max_complexity" and "max_nesting_depth" should appear
-    assert!(stdout.contains("Max Complexity"), "expected Max Complexity in file summary");
-    assert!(stdout.contains("Max Nesting Depth"), "expected Max Nesting Depth in file summary");
+    assert!(
+        stdout.contains("Max Complexity"),
+        "expected Max Complexity in file summary"
+    );
+    assert!(
+        stdout.contains("Max Nesting Depth"),
+        "expected Max Nesting Depth in file summary"
+    );
 
     // These labels only appear in summary table rows, not in the per-function table headers,
     // so their absence confirms metric filtering is working.
-    assert!(!stdout.contains("Total Functions"), "Total Functions row should be absent (not in either summary list)");
-    assert!(!stdout.contains("Total Lines"), "Total Lines row should be absent (not in either summary list)");
-    assert!(!stdout.contains("Avg Complexity / Function"), "Avg Complexity / Function row should be absent");
-    assert!(!stdout.contains("Avg Halstead Volume"), "Avg Halstead Volume row should be absent");
+    assert!(
+        !stdout.contains("Total Functions"),
+        "Total Functions row should be absent (not in either summary list)"
+    );
+    assert!(
+        !stdout.contains("Total Lines"),
+        "Total Lines row should be absent (not in either summary list)"
+    );
+    assert!(
+        !stdout.contains("Avg Complexity / Function"),
+        "Avg Complexity / Function row should be absent"
+    );
+    assert!(
+        !stdout.contains("Avg Halstead Volume"),
+        "Avg Halstead Volume row should be absent"
+    );
 }
 
 #[test]
@@ -274,14 +307,23 @@ fn test_config_unknown_metric_key_warns_and_succeeds() {
         .expect("failed to run lede");
 
     // Analysis must succeed
-    assert!(output.status.success(), "lede should exit 0 even with unknown metric key");
+    assert!(
+        output.status.success(),
+        "lede should exit 0 even with unknown metric key"
+    );
 
     // Known key still appears in output
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Files Analyzed"), "known metric key should still render");
+    assert!(
+        stdout.contains("Files Analyzed"),
+        "known metric key should still render"
+    );
 
     // Unknown key does NOT appear in output
-    assert!(!stdout.contains("totally_fake_metric"), "unknown key should not appear in output");
+    assert!(
+        !stdout.contains("totally_fake_metric"),
+        "unknown key should not appear in output"
+    );
 
     // Warning appears on stderr
     let stderr = String::from_utf8_lossy(&output.stderr);

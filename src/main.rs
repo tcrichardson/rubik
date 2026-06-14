@@ -1,5 +1,5 @@
+use amiextra::{analyze_path, config::ReportConfig, output};
 use clap::Parser;
-use lede::{analyze_path, config::ReportConfig, output};
 use std::process;
 
 #[derive(Parser)]
@@ -24,7 +24,9 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let config_path = args.config.unwrap_or_else(|| std::path::PathBuf::from("config/lede.toml"));
+    let config_path = args
+        .config
+        .unwrap_or_else(|| std::path::PathBuf::from("config/lede.toml"));
     let config = ReportConfig::load_from_path(&config_path);
 
     let results = match analyze_path(&args.path, args.include_closures) {
@@ -41,7 +43,7 @@ fn main() {
         }
     }
 
-    let clusters = lede::duplicates::compute_duplicates(&results);
+    let clusters = amiextra::duplicates::compute_duplicates(&results);
     let formatter = output::get_formatter(&args.format, config);
     println!("{}", formatter.format(&results, &clusters));
 }

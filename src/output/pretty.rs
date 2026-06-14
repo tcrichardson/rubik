@@ -1,5 +1,7 @@
-use crate::{FileResult, config::ReportConfig, duplicates::DuplicateCluster, output::OutputFormatter};
-use comfy_table::{Table, ContentArrangement};
+use crate::{
+    FileResult, config::ReportConfig, duplicates::DuplicateCluster, output::OutputFormatter,
+};
+use comfy_table::{ContentArrangement, Table};
 
 pub struct PrettyFormatter {
     pub config: ReportConfig,

@@ -1,11 +1,16 @@
-use tree_sitter::Node;
 use std::collections::HashSet;
+use tree_sitter::Node;
 
 pub fn max_nesting_depth(node: Node, decision_kinds: &[&str], function_kinds: &[&str]) -> u32 {
     compute_nesting_depth(node, decision_kinds, function_kinds, 0)
 }
 
-fn compute_nesting_depth(node: Node, decision_kinds: &[&str], function_kinds: &[&str], current_depth: u32) -> u32 {
+fn compute_nesting_depth(
+    node: Node,
+    decision_kinds: &[&str],
+    function_kinds: &[&str],
+    current_depth: u32,
+) -> u32 {
     let mut max_depth = current_depth;
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
@@ -13,7 +18,11 @@ fn compute_nesting_depth(node: Node, decision_kinds: &[&str], function_kinds: &[
             continue;
         }
         let is_decision = decision_kinds.contains(&child.kind());
-        let next_depth = if is_decision { current_depth + 1 } else { current_depth };
+        let next_depth = if is_decision {
+            current_depth + 1
+        } else {
+            current_depth
+        };
         let child_max = compute_nesting_depth(child, decision_kinds, function_kinds, next_depth);
         if child_max > max_depth {
             max_depth = child_max;
@@ -74,7 +83,14 @@ pub fn halstead_metrics(
     function_kinds: &[&str],
 ) -> (f64, f64) {
     let mut state = HalsteadState::new();
-    collect_halstead(node, source, operator_kinds, operand_kinds, function_kinds, &mut state);
+    collect_halstead(
+        node,
+        source,
+        operator_kinds,
+        operand_kinds,
+        function_kinds,
+        &mut state,
+    );
 
     let n = state.n();
     let n1 = state.n1();
@@ -117,7 +133,14 @@ fn collect_halstead(
         if function_kinds.contains(&child.kind()) {
             continue;
         }
-        collect_halstead(child, source, operator_kinds, operand_kinds, function_kinds, state);
+        collect_halstead(
+            child,
+            source,
+            operator_kinds,
+            operand_kinds,
+            function_kinds,
+            state,
+        );
     }
 }
 
@@ -162,7 +185,11 @@ mod tests {
         let tree = parse_rust(source);
         let root = tree.root_node();
         let func = find_function(root, "function_item").expect("function not found");
-        let depth = max_nesting_depth(func, &["if_expression", "for_expression"], &["function_item"]);
+        let depth = max_nesting_depth(
+            func,
+            &["if_expression", "for_expression"],
+            &["function_item"],
+        );
         assert_eq!(depth, 2);
     }
 
