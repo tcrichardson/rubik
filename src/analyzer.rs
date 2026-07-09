@@ -1,8 +1,9 @@
 use crate::{
     FileResult,
     language::{
-        LanguageAnalyzer, c::CAnalyzer, java::JavaAnalyzer, javascript::JavaScriptAnalyzer,
-        python::PythonAnalyzer, rust::RustAnalyzer, typescript::TypeScriptAnalyzer,
+        LanguageAnalyzer, c::CAnalyzer, go::GoAnalyzer, java::JavaAnalyzer,
+        javascript::JavaScriptAnalyzer, python::PythonAnalyzer, rust::RustAnalyzer,
+        typescript::TypeScriptAnalyzer,
     },
 };
 use std::path::Path;
@@ -14,6 +15,7 @@ static ANALYZERS: &[&dyn LanguageAnalyzer] = &[
     &JavaScriptAnalyzer,
     &TypeScriptAnalyzer,
     &CAnalyzer,
+    &GoAnalyzer,
     &JavaAnalyzer,
 ];
 

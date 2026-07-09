@@ -24,7 +24,7 @@ impl ReportConfig {
     }
 
     pub fn load_from_dir(dir: &Path) -> Self {
-        load_from_path(&dir.join("lede.toml"))
+        load_from_path(&dir.join("polygraph.toml"))
     }
 }
 
@@ -79,12 +79,12 @@ mod tests {
     use std::fs;
 
     fn write_toml(dir: &std::path::PathBuf, content: &str) {
-        fs::write(dir.join("lede.toml"), content).unwrap();
+        fs::write(dir.join("polygraph.toml"), content).unwrap();
     }
 
     #[test]
     fn test_load_valid_config() {
-        let dir = std::env::temp_dir().join("lede_test_config_valid");
+        let dir = std::env::temp_dir().join("polygraph_test_config_valid");
         fs::create_dir_all(&dir).unwrap();
         write_toml(
             &dir,
@@ -121,10 +121,10 @@ metrics = ["total_complexity", "max_nesting_depth"]
 
     #[test]
     fn test_load_missing_file_returns_defaults() {
-        let dir = std::env::temp_dir().join("lede_test_config_missing");
+        let dir = std::env::temp_dir().join("polygraph_test_config_missing");
         fs::create_dir_all(&dir).unwrap();
-        // Ensure no lede.toml exists
-        let _ = fs::remove_file(dir.join("lede.toml"));
+        // Ensure no polygraph.toml exists
+        let _ = fs::remove_file(dir.join("polygraph.toml"));
         let cfg = ReportConfig::load_from_dir(&dir);
         assert!(cfg.introduction.is_none());
         assert!(cfg.project_summary_metrics.is_none());
@@ -134,7 +134,7 @@ metrics = ["total_complexity", "max_nesting_depth"]
 
     #[test]
     fn test_load_malformed_toml_returns_defaults() {
-        let dir = std::env::temp_dir().join("lede_test_config_malformed");
+        let dir = std::env::temp_dir().join("polygraph_test_config_malformed");
         fs::create_dir_all(&dir).unwrap();
         write_toml(&dir, "this is not valid toml }{][");
         let cfg = ReportConfig::load_from_dir(&dir);

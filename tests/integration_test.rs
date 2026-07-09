@@ -1,7 +1,7 @@
-use lede::output::OutputFormatter;
+use polygraph::output::OutputFormatter;
 use std::process::Command;
 
-fn lede() -> Command {
+fn polygraph() -> Command {
     let mut cmd = Command::new("cargo");
     cmd.arg("run").arg("--");
     cmd
@@ -9,10 +9,10 @@ fn lede() -> Command {
 
 #[test]
 fn test_rust_fixture_pretty() {
-    let output = lede()
+    let output = polygraph()
         .arg("tests/fixtures/rust_sample.rs")
         .output()
-        .expect("failed to run lede");
+        .expect("failed to run polygraph");
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("simple"));
     assert!(stdout.contains("with_if"));
@@ -25,11 +25,11 @@ fn test_rust_fixture_pretty() {
 
 #[test]
 fn test_rust_fixture_include_closures() {
-    let output = lede()
+    let output = polygraph()
         .arg("tests/fixtures/rust_sample.rs")
         .arg("--include-closures")
         .output()
-        .expect("failed to run lede");
+        .expect("failed to run polygraph");
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("simple"));
     assert!(stdout.contains("nested"));
@@ -38,14 +38,14 @@ fn test_rust_fixture_include_closures() {
 
 #[test]
 fn test_python_fixture_json() {
-    let output = lede()
+    let output = polygraph()
         .arg("tests/fixtures/python_sample.py")
         .arg("-f")
         .arg("json")
         .output()
-        .expect("failed to run lede");
+        .expect("failed to run polygraph");
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let parsed: lede::AnalysisOutput = serde_json::from_str(&stdout).expect("invalid JSON");
+    let parsed: polygraph::AnalysisOutput = serde_json::from_str(&stdout).expect("invalid JSON");
     assert_eq!(parsed.files.len(), 1);
     assert_eq!(parsed.summary.files_analyzed, 1);
     let file = &parsed.files[0];
@@ -64,14 +64,14 @@ fn test_python_fixture_json() {
 
 #[test]
 fn test_js_fixture_json() {
-    let output = lede()
+    let output = polygraph()
         .arg("tests/fixtures/js_sample.js")
         .arg("--format")
         .arg("json")
         .output()
-        .expect("failed to run lede");
+        .expect("failed to run polygraph");
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let parsed: lede::AnalysisOutput = serde_json::from_str(&stdout).expect("invalid JSON");
+    let parsed: polygraph::AnalysisOutput = serde_json::from_str(&stdout).expect("invalid JSON");
     assert_eq!(parsed.files.len(), 1);
     assert_eq!(parsed.summary.files_analyzed, 1);
     let file = &parsed.files[0];
@@ -88,14 +88,14 @@ fn test_js_fixture_json() {
 
 #[test]
 fn test_c_fixture_json() {
-    let output = lede()
+    let output = polygraph()
         .arg("tests/fixtures/c_sample.c")
         .arg("--format")
         .arg("json")
         .output()
-        .expect("failed to run lede");
+        .expect("failed to run polygraph");
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let parsed: lede::AnalysisOutput = serde_json::from_str(&stdout).expect("invalid JSON");
+    let parsed: polygraph::AnalysisOutput = serde_json::from_str(&stdout).expect("invalid JSON");
     assert_eq!(parsed.files.len(), 1);
     assert_eq!(parsed.summary.files_analyzed, 1);
     let file = &parsed.files[0];
@@ -114,14 +114,14 @@ fn test_c_fixture_json() {
 
 #[test]
 fn test_typescript_fixture_json() {
-    let output = lede()
+    let output = polygraph()
         .arg("tests/fixtures/typescript_sample.ts")
         .arg("--format")
         .arg("json")
         .output()
-        .expect("failed to run lede");
+        .expect("failed to run polygraph");
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let parsed: lede::AnalysisOutput = serde_json::from_str(&stdout).expect("invalid JSON");
+    let parsed: polygraph::AnalysisOutput = serde_json::from_str(&stdout).expect("invalid JSON");
     assert_eq!(parsed.files.len(), 1);
     assert_eq!(parsed.summary.files_analyzed, 1);
     let file = &parsed.files[0];
@@ -140,10 +140,10 @@ fn test_typescript_fixture_json() {
 
 #[test]
 fn test_invalid_file_skips() {
-    let output = lede()
+    let output = polygraph()
         .arg("tests/fixtures/invalid.py")
         .output()
-        .expect("failed to run lede");
+        .expect("failed to run polygraph");
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(stderr.contains("Error parsing") || stderr.contains("Failed to parse"));
     assert!(output.status.success());
@@ -151,14 +151,14 @@ fn test_invalid_file_skips() {
 
 #[test]
 fn test_directory_scan() {
-    let output = lede()
+    let output = polygraph()
         .arg("tests/fixtures")
         .arg("-f")
         .arg("json")
         .output()
-        .expect("failed to run lede");
+        .expect("failed to run polygraph");
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let parsed: lede::AnalysisOutput = serde_json::from_str(&stdout).expect("invalid JSON");
+    let parsed: polygraph::AnalysisOutput = serde_json::from_str(&stdout).expect("invalid JSON");
     let paths: Vec<String> = parsed
         .files
         .iter()
@@ -174,10 +174,10 @@ fn test_directory_scan() {
 
 #[test]
 fn test_duplicate_clusters_in_output() {
-    let results = lede::analyze_path(std::path::Path::new("tests/fixtures/duplicates/"), false)
+    let results = polygraph::analyze_path(std::path::Path::new("tests/fixtures/duplicates/"), false)
         .expect("failed to analyze duplicates directory");
 
-    let clusters = lede::duplicates::compute_duplicates(&results);
+    let clusters = polygraph::duplicates::compute_duplicates(&results);
 
     assert!(
         !clusters.is_empty(),
@@ -196,8 +196,8 @@ fn test_duplicate_clusters_in_output() {
     );
 
     // Also verify markdown output contains the duplication section
-    let formatter = lede::output::markdown::MarkdownFormatter {
-        config: lede::config::ReportConfig::default(),
+    let formatter = polygraph::output::markdown::MarkdownFormatter {
+        config: polygraph::config::ReportConfig::default(),
     };
     let output = formatter.format(&results, &clusters);
     assert!(
@@ -208,12 +208,12 @@ fn test_duplicate_clusters_in_output() {
 
 #[test]
 fn test_config_introduction_appears_in_markdown_output() {
-    let output = lede()
+    let output = polygraph()
         .arg("tests/fixtures/config_intro")
         .arg("--config")
-        .arg("tests/fixtures/config_intro/lede.toml")
+        .arg("tests/fixtures/config_intro/polygraph.toml")
         .output()
-        .expect("failed to run lede");
+        .expect("failed to run polygraph");
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
         stdout.contains("CUSTOM INTRO TEXT FOR TESTING"),
@@ -230,12 +230,12 @@ fn test_config_introduction_appears_in_markdown_output() {
 
 #[test]
 fn test_config_metric_filtering_markdown() {
-    let output = lede()
+    let output = polygraph()
         .arg("tests/fixtures/config_filtered")
         .arg("--config")
-        .arg("tests/fixtures/config_filtered/lede.toml")
+        .arg("tests/fixtures/config_filtered/polygraph.toml")
         .output()
-        .expect("failed to run lede");
+        .expect("failed to run polygraph");
     let stdout = String::from_utf8_lossy(&output.stdout);
 
     // Project summary: only "files_analyzed" and "total_complexity" should appear
@@ -280,14 +280,14 @@ fn test_config_metric_filtering_markdown() {
 
 #[test]
 fn test_config_introduction_appears_in_json_output() {
-    let output = lede()
+    let output = polygraph()
         .arg("tests/fixtures/config_intro")
         .arg("--config")
-        .arg("tests/fixtures/config_intro/lede.toml")
+        .arg("tests/fixtures/config_intro/polygraph.toml")
         .arg("-f")
         .arg("json")
         .output()
-        .expect("failed to run lede");
+        .expect("failed to run polygraph");
     let stdout = String::from_utf8_lossy(&output.stdout);
     let parsed: serde_json::Value = serde_json::from_str(&stdout).expect("invalid JSON");
     assert_eq!(
@@ -299,17 +299,17 @@ fn test_config_introduction_appears_in_json_output() {
 
 #[test]
 fn test_config_unknown_metric_key_warns_and_succeeds() {
-    let output = lede()
+    let output = polygraph()
         .arg("tests/fixtures/config_unknown_key")
         .arg("--config")
-        .arg("tests/fixtures/config_unknown_key/lede.toml")
+        .arg("tests/fixtures/config_unknown_key/polygraph.toml")
         .output()
-        .expect("failed to run lede");
+        .expect("failed to run polygraph");
 
     // Analysis must succeed
     assert!(
         output.status.success(),
-        "lede should exit 0 even with unknown metric key"
+        "polygraph should exit 0 even with unknown metric key"
     );
 
     // Known key still appears in output

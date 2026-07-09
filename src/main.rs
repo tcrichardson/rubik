@@ -1,9 +1,9 @@
-use amiextra::{analyze_path, config::ReportConfig, output};
+use polygraph::{analyze_path, config::ReportConfig, output};
 use clap::Parser;
 use std::process;
 
 #[derive(Parser)]
-#[command(name = "lede", version)]
+#[command(name = "polygraph", version)]
 struct Args {
     /// Path to a file or directory to analyze
     path: std::path::PathBuf,
@@ -16,7 +16,7 @@ struct Args {
     #[arg(long)]
     include_closures: bool,
 
-    /// Path to a lede.toml configuration file
+    /// Path to a polygraph.toml configuration file
     #[arg(short, long)]
     config: Option<std::path::PathBuf>,
 }
@@ -26,7 +26,7 @@ fn main() {
 
     let config_path = args
         .config
-        .unwrap_or_else(|| std::path::PathBuf::from("config/lede.toml"));
+        .unwrap_or_else(|| std::path::PathBuf::from("config/polygraph.toml"));
     let config = ReportConfig::load_from_path(&config_path);
 
     let results = match analyze_path(&args.path, args.include_closures) {
@@ -43,7 +43,7 @@ fn main() {
         }
     }
 
-    let clusters = amiextra::duplicates::compute_duplicates(&results);
+    let clusters = polygraph::duplicates::compute_duplicates(&results);
     let formatter = output::get_formatter(&args.format, config);
     println!("{}", formatter.format(&results, &clusters));
 }

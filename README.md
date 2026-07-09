@@ -1,4 +1,4 @@
-# amiextra
+# polygraph
 
 A fast CLI tool that computes cyclomatic code complexity and Halstead metrics for Rust, Python, JavaScript, TypeScript, C, and Java source files. It reports complexity and cognitive metrics per function and per file. By default, closures and anonymous functions are excluded from analysis so they don't skew aggregate metrics — you can opt to include them with `--include-closures`.
 
@@ -20,49 +20,49 @@ A fast CLI tool that computes cyclomatic code complexity and Halstead metrics fo
 Build from source with Cargo:
 
 ```bash
-git clone https://github.com/tcrichardson/amiextra
-cd amiextra
+git clone https://github.com/tcrichardson/polygraph
+cd polygraph
 cargo build --release
 ```
 
-The binary will be available at `target/release/amiextra`.
+The binary will be available at `target/release/polygraph`.
 
 ## Usage
 
 Analyze a single file:
 
 ```bash
-amiextra src/main.rs
+polygraph src/main.rs
 ```
 
 Analyze an entire directory:
 
 ```bash
-amiextra src/
+polygraph src/
 ```
 
 Output as JSON:
 
 ```bash
-amiextra src/ -f json
+polygraph src/ -f json
 ```
 
 Include closures and lambdas in the analysis:
 
 ```bash
-amiextra src/ --include-closures
+polygraph src/ --include-closures
 ```
 
 ### CLI Options
 
 ```
-Usage: amiextra [OPTIONS] <PATH>
+Usage: polygraph [OPTIONS] <PATH>
 
 Arguments:
   <PATH>  Path to a file or directory to analyze
 
 Options:
-  -c, --config <CONFIG>     Path to a lede.toml configuration file
+  -c, --config <CONFIG>     Path to a polygraph.toml configuration file
   -f, --format <FORMAT>     Output format: pretty or json [default: pretty]
       --include-closures    Include closures, lambdas, and arrow functions in the analysis
   -h, --help                Print help
@@ -71,13 +71,13 @@ Options:
 
 ## Configuration
 
-amiextra uses a `lede.toml` configuration file to control the report output. By default it reads from `config/lede.toml`. You can specify a different file with the `--config` (or `-c`) option.
+polygraph uses a `polygraph.toml` configuration file to control the report output. By default it reads from `config/polygraph.toml`. You can specify a different file with the `--config` (or `-c`) option.
 
 Use the configuration file to add a custom introduction to the report and to select which metrics appear in the project and file summary sections.
 
 If the configuration file is absent or a section is omitted, all metrics are shown (default behaviour unchanged).
 
-### Example `lede.toml`
+### Example `polygraph.toml`
 
 ~~~toml
 # Optional introduction text prepended to the report
@@ -323,7 +323,7 @@ The suite includes:
 
 ## Architecture
 
-Lede uses [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) to parse source code into ASTs. Each language has a dedicated analyzer that walks the AST to find function boundaries and count decision points. A shared `cognitive` module computes nesting depth and Halstead metrics for every function. A shared dispatcher routes files to the correct analyzer based on extension.
+Polygraph uses [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) to parse source code into ASTs. Each language has a dedicated analyzer that walks the AST to find function boundaries and count decision points. A shared `cognitive` module computes nesting depth and Halstead metrics for every function. A shared dispatcher routes files to the correct analyzer based on extension.
 
 ## License
 
