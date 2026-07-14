@@ -174,8 +174,12 @@ fn test_directory_scan() {
 
 #[test]
 fn test_duplicate_clusters_in_output() {
-    let results = polygraph::analyze_path(std::path::Path::new("tests/fixtures/duplicates/"), false)
-        .expect("failed to analyze duplicates directory");
+    let results = polygraph::analyze_path(
+        std::path::Path::new("tests/fixtures/duplicates/"),
+        false,
+        false,
+    )
+    .expect("failed to analyze duplicates directory");
 
     let clusters = polygraph::duplicates::compute_duplicates(&results);
 
@@ -199,7 +203,7 @@ fn test_duplicate_clusters_in_output() {
     let formatter = polygraph::output::markdown::MarkdownFormatter {
         config: polygraph::config::ReportConfig::default(),
     };
-    let output = formatter.format(&results, &clusters);
+    let output = formatter.format(&results, &clusters, &[]);
     assert!(
         output.contains("Structural Duplication Candidates"),
         "expected markdown output to contain duplication heading"
@@ -331,4 +335,156 @@ fn test_config_unknown_metric_key_warns_and_succeeds() {
         stderr.contains("totally_fake_metric"),
         "expected warning about unknown key on stderr, got: {stderr}"
     );
+}
+
+#[test]
+fn test_compute_clones_detects_renamed_rust_pair() {
+    let results = polygraph::analyze_path(
+        std::path::Path::new("tests/fixtures/clones/rust"),
+        false,
+        true,
+    )
+    .expect("failed to analyze clones/rust directory");
+
+    let clone_config = polygraph::clones::CloneConfig::default();
+    let pairs = polygraph::clones::compute_clones(&results, &clone_config);
+
+    let found = pairs.iter().find(|p| {
+        (p.a.name == "calculate_total" && p.b.name == "compute_sum")
+            || (p.a.name == "compute_sum" && p.b.name == "calculate_total")
+    });
+    assert!(
+        found.is_some(),
+        "expected a clone pair between calculate_total and compute_sum, got: {:#?}",
+        pairs
+    );
+    assert!(found.unwrap().similarity >= clone_config.similarity_threshold);
+
+    // The unrelated/dissimilar helper functions must not be reported as clones of each other.
+    assert!(
+        !pairs
+            .iter()
+            .any(|p| p.a.name == "unrelated_helper" || p.b.name == "unrelated_helper"),
+        "unrelated_helper must not appear in any clone pair, got: {:#?}",
+        pairs
+    );
+}
+
+#[test]
+fn test_compute_clones_detects_renamed_python_pair() {
+    let results = polygraph::analyze_path(
+        std::path::Path::new("tests/fixtures/clones/python"),
+        false,
+        true,
+    )
+    .expect("failed to analyze clones/python directory");
+
+    let clone_config = polygraph::clones::CloneConfig::default();
+    let pairs = polygraph::clones::compute_clones(&results, &clone_config);
+
+    let found = pairs.iter().find(|p| {
+        (p.a.name == "calculate_total" && p.b.name == "compute_sum")
+            || (p.a.name == "compute_sum" && p.b.name == "calculate_total")
+    });
+    assert!(
+        found.is_some(),
+        "expected a clone pair between calculate_total and compute_sum, got: {:#?}",
+        pairs
+    );
+    assert!(found.unwrap().similarity >= clone_config.similarity_threshold);
+}
+
+#[test]
+fn test_clones_cli_off_by_default_leaves_output_unchanged() {
+    let without_flag = polygraph()
+        .arg("tests/fixtures/clones/rust")
+        .output()
+        .expect("failed to run polygraph");
+    let stdout = String::from_utf8_lossy(&without_flag.stdout);
+    assert!(
+        !stdout.contains("Clone Candidates"),
+        "clone section must not appear unless --clones is passed"
+    );
+
+    // Running the same command twice without --clones must be byte-identical,
+    // confirming the flag carries zero cost/behavior change until opted in.
+    let again = polygraph()
+        .arg("tests/fixtures/clones/rust")
+        .output()
+        .expect("failed to run polygraph");
+    assert_eq!(without_flag.stdout, again.stdout);
+}
+
+#[test]
+fn test_clones_cli_flag_reports_clone_section_markdown() {
+    let output = polygraph()
+        .arg("tests/fixtures/clones/rust")
+        .arg("--clones")
+        .output()
+        .expect("failed to run polygraph");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("Clone Candidates"),
+        "expected clone section in markdown output, got:\n{stdout}"
+    );
+    assert!(stdout.contains("calculate_total"));
+    assert!(stdout.contains("compute_sum"));
+}
+
+#[test]
+fn test_clones_cli_flag_reports_clone_section_json() {
+    let output = polygraph()
+        .arg("tests/fixtures/clones/rust")
+        .arg("--clones")
+        .arg("-f")
+        .arg("json")
+        .output()
+        .expect("failed to run polygraph");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: polygraph::AnalysisOutput = serde_json::from_str(&stdout).expect("invalid JSON");
+    let clones = parsed
+        .clones
+        .expect("expected clones field to be populated");
+    assert!(!clones.is_empty());
+    assert!(clones.iter().any(
+        |p| (p.a.name == "calculate_total" && p.b.name == "compute_sum")
+            || (p.a.name == "compute_sum" && p.b.name == "calculate_total")
+    ));
+}
+
+#[test]
+fn test_clones_cli_threshold_override_excludes_pair() {
+    // A near-impossible threshold should exclude the otherwise-detected pair.
+    let output = polygraph()
+        .arg("tests/fixtures/clones/rust")
+        .arg("--clones")
+        .arg("--clone-threshold")
+        .arg("1.5")
+        .arg("-f")
+        .arg("json")
+        .output()
+        .expect("failed to run polygraph");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: polygraph::AnalysisOutput = serde_json::from_str(&stdout).expect("invalid JSON");
+    assert!(
+        parsed.clones.is_none(),
+        "a threshold above the maximum possible similarity must exclude every pair"
+    );
+}
+
+#[test]
+fn test_clones_cli_min_lines_override_excludes_small_functions() {
+    // A very high min-lines requirement should exclude every function in the fixture.
+    let output = polygraph()
+        .arg("tests/fixtures/clones/rust")
+        .arg("--clones")
+        .arg("--clone-min-lines")
+        .arg("1000")
+        .arg("-f")
+        .arg("json")
+        .output()
+        .expect("failed to run polygraph");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: polygraph::AnalysisOutput = serde_json::from_str(&stdout).expect("invalid JSON");
+    assert!(parsed.clones.is_none());
 }

@@ -104,11 +104,12 @@ mod tests {
             halstead_difficulty: difficulty,
             halstead_effort: 0.0,
             halstead_time: 0.0,
+            clone_tokens: Vec::new(),
         }
     }
 
     fn make_file(path: &str, functions: Vec<FunctionComplexity>) -> FileResult {
-        crate::FileResult::from_functions(std::path::Path::new(path), 100, functions)
+        crate::FileResult::from_functions(std::path::Path::new(path), 100, functions, "Rust")
     }
 
     #[test]

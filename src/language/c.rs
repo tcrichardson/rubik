@@ -77,6 +77,7 @@ impl LanguageAnalyzer for CAnalyzer {
             extract_name,
             match_case_kinds: &[],
             skip_childless_nodes: false,
+            token_classifier: None,
         }
     }
 }

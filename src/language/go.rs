@@ -94,6 +94,7 @@ impl LanguageAnalyzer for GoAnalyzer {
             extract_name,
             match_case_kinds: &[],
             skip_childless_nodes: false,
+            token_classifier: None,
         }
     }
 }

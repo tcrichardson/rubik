@@ -1,5 +1,6 @@
 use crate::{
-    FileResult, config::ReportConfig, duplicates::DuplicateCluster, output::OutputFormatter,
+    FileResult, clones::ClonePair, config::ReportConfig, duplicates::DuplicateCluster,
+    output::OutputFormatter,
 };
 use comfy_table::{ContentArrangement, Table};
 
@@ -8,7 +9,12 @@ pub struct PrettyFormatter {
 }
 
 impl OutputFormatter for PrettyFormatter {
-    fn format(&self, results: &[FileResult], clusters: &[DuplicateCluster]) -> String {
+    fn format(
+        &self,
+        results: &[FileResult],
+        clusters: &[DuplicateCluster],
+        clones: &[ClonePair],
+    ) -> String {
         let mut out = String::new();
 
         if let Some(ref intro) = self.config.introduction {
@@ -38,6 +44,29 @@ impl OutputFormatter for PrettyFormatter {
                 out.push('\n');
             }
         }
+
+        if !clones.is_empty() {
+            out.push_str("Clone Candidates\n\n");
+            for pair in clones {
+                out.push_str(&format!("similarity={:.2}\n", pair.similarity));
+                out.push_str(&format!(
+                    "  {} @ {}:{}-{}\n",
+                    pair.a.name,
+                    pair.a.path.display(),
+                    pair.a.line_start,
+                    pair.a.line_end
+                ));
+                out.push_str(&format!(
+                    "  {} @ {}:{}-{}\n",
+                    pair.b.name,
+                    pair.b.path.display(),
+                    pair.b.line_start,
+                    pair.b.line_end
+                ));
+                out.push('\n');
+            }
+        }
+
         out.push_str(&results.iter().map(format_file_entry).collect::<String>());
         out
     }

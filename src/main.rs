@@ -1,5 +1,5 @@
-use polygraph::{analyze_path, config::ReportConfig, output};
 use clap::Parser;
+use polygraph::{analyze_path, clones::CloneConfig, config::ReportConfig, output};
 use std::process;
 
 #[derive(Parser)]
@@ -19,6 +19,19 @@ struct Args {
     /// Path to a polygraph.toml configuration file
     #[arg(short, long)]
     config: Option<std::path::PathBuf>,
+
+    /// Enable structural (Type-1/2/3) clone detection via CST comparison.
+    /// Off by default: output and performance are unchanged without this flag.
+    #[arg(long)]
+    clones: bool,
+
+    /// Override the clone similarity threshold (0.0-1.0) from polygraph.toml
+    #[arg(long)]
+    clone_threshold: Option<f64>,
+
+    /// Override the minimum function size (in lines) considered for clone comparison
+    #[arg(long)]
+    clone_min_lines: Option<usize>,
 }
 
 fn main() {
@@ -29,7 +42,7 @@ fn main() {
         .unwrap_or_else(|| std::path::PathBuf::from("config/polygraph.toml"));
     let config = ReportConfig::load_from_path(&config_path);
 
-    let results = match analyze_path(&args.path, args.include_closures) {
+    let results = match analyze_path(&args.path, args.include_closures, args.clones) {
         Ok(r) => r,
         Err(e) => {
             eprintln!("Error: {}", e);
@@ -44,6 +57,27 @@ fn main() {
     }
 
     let clusters = polygraph::duplicates::compute_duplicates(&results);
+
+    let mut clone_config = CloneConfig::default();
+    if let Some(threshold) = config.clone_similarity_threshold {
+        clone_config.similarity_threshold = threshold;
+    }
+    if let Some(min_lines) = config.clone_min_lines {
+        clone_config.min_lines = min_lines;
+    }
+    if let Some(threshold) = args.clone_threshold {
+        clone_config.similarity_threshold = threshold;
+    }
+    if let Some(min_lines) = args.clone_min_lines {
+        clone_config.min_lines = min_lines;
+    }
+
+    let clones = if args.clones {
+        polygraph::clones::compute_clones(&results, &clone_config)
+    } else {
+        Vec::new()
+    };
+
     let formatter = output::get_formatter(&args.format, config);
-    println!("{}", formatter.format(&results, &clusters));
+    println!("{}", formatter.format(&results, &clusters, &clones));
 }

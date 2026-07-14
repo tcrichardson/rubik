@@ -17,6 +17,26 @@ pub struct LanguageConfig {
     pub match_case_kinds: &'static [(&'static str, &'static str)],
     /// If true, nodes with no children are skipped (e.g., bare lambda tokens in Python).
     pub skip_childless_nodes: bool,
+    /// Per-language hook classifying each CST node during a clone-signature
+    /// walk. `None` means this language doesn't participate in clone
+    /// detection yet — its functions simply never get a token sequence.
+    pub token_classifier: Option<fn(Node, &str) -> TokenRole>,
+}
+
+/// How a node should be represented in a function's normalized clone-detection
+/// token sequence.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TokenRole {
+    /// Use this node's `kind()` as the token, then recurse into its children
+    /// (the default treatment for control-flow/structural nodes).
+    Structural,
+    /// This node is a call/method target identifier: preserve its literal
+    /// source text as the token instead of a generic placeholder, and do not
+    /// recurse into it.
+    Preserve,
+    /// This node is a local binding or literal value: replace it with the
+    /// given generic placeholder token, and do not recurse into it.
+    Normalize(&'static str),
 }
 
 pub trait LanguageAnalyzer: Send + Sync {
@@ -30,6 +50,19 @@ pub trait LanguageAnalyzer: Send + Sync {
         &self,
         source: &str,
         include_closures: bool,
+    ) -> Result<Vec<FunctionComplexity>, String> {
+        self.analyze_full(source, include_closures, false)
+    }
+
+    /// Like `analyze`, but also accepts `compute_clone_signature`: when true,
+    /// each returned function gets its normalized clone-detection token
+    /// sequence populated (for languages with a `token_classifier`). This is
+    /// zero-cost when false — no clone-detection work is performed at all.
+    fn analyze_full(
+        &self,
+        source: &str,
+        include_closures: bool,
+        compute_clone_signature: bool,
     ) -> Result<Vec<FunctionComplexity>, String> {
         let mut parser = self.parser()?;
         let config = self.config();
@@ -45,6 +78,7 @@ pub trait LanguageAnalyzer: Send + Sync {
             &mut functions,
             &config,
             include_closures,
+            compute_clone_signature,
         );
         Ok(functions)
     }
@@ -57,13 +91,26 @@ pub fn collect_functions(
     functions: &mut Vec<FunctionComplexity>,
     config: &LanguageConfig,
     include_closures: bool,
+    compute_clone_signature: bool,
 ) {
     if is_target_function(node, config, include_closures) {
-        functions.push(build_function_complexity(node, source, config));
+        functions.push(build_function_complexity(
+            node,
+            source,
+            config,
+            compute_clone_signature,
+        ));
     }
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
-        collect_functions(child, source, functions, config, include_closures);
+        collect_functions(
+            child,
+            source,
+            functions,
+            config,
+            include_closures,
+            compute_clone_signature,
+        );
     }
 }
 
@@ -81,6 +128,7 @@ fn build_function_complexity(
     node: Node,
     source: &str,
     config: &LanguageConfig,
+    compute_clone_signature: bool,
 ) -> FunctionComplexity {
     let name = (config.extract_name)(node, source);
     let complexity = 1 + count_decisions(
@@ -101,6 +149,17 @@ fn build_function_complexity(
     );
     let halstead_effort = halstead_volume * halstead_difficulty;
     let halstead_time = halstead_effort / STROUDS_NUMBER;
+    let clone_tokens = if compute_clone_signature {
+        config
+            .token_classifier
+            .map(|classifier| {
+                let body = node.child_by_field_name("body").unwrap_or(node);
+                build_token_sequence(body, source, classifier)
+            })
+            .unwrap_or_default()
+    } else {
+        Vec::new()
+    };
     FunctionComplexity {
         name,
         line_start: node.start_position().row + 1,
@@ -112,6 +171,45 @@ fn build_function_complexity(
         halstead_difficulty,
         halstead_effort,
         halstead_time,
+        clone_tokens,
+    }
+}
+
+/// Walks `node`'s CST and produces a normalized token sequence for clone
+/// detection, using `classifier` to decide, per node, whether to preserve its
+/// literal text, replace it with a generic placeholder, or use its `kind()`
+/// and recurse into its children.
+pub fn build_token_sequence(
+    node: Node,
+    source: &str,
+    classifier: fn(Node, &str) -> TokenRole,
+) -> Vec<String> {
+    let mut tokens = Vec::new();
+    walk_tokens(node, source, classifier, &mut tokens);
+    tokens
+}
+
+fn walk_tokens(
+    node: Node,
+    source: &str,
+    classifier: fn(Node, &str) -> TokenRole,
+    tokens: &mut Vec<String>,
+) {
+    match classifier(node, source) {
+        TokenRole::Preserve => {
+            tokens.push(source[node.start_byte()..node.end_byte()].to_string());
+            return;
+        }
+        TokenRole::Normalize(placeholder) => {
+            tokens.push(placeholder.to_string());
+            return;
+        }
+        TokenRole::Structural => {}
+    }
+    tokens.push(node.kind().to_string());
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        walk_tokens(child, source, classifier, tokens);
     }
 }
 

@@ -1,9 +1,15 @@
 use crate::FileResult;
+use crate::clones::ClonePair;
 use crate::config::ReportConfig;
 use crate::duplicates::DuplicateCluster;
 
 pub trait OutputFormatter {
-    fn format(&self, results: &[FileResult], clusters: &[DuplicateCluster]) -> String;
+    fn format(
+        &self,
+        results: &[FileResult],
+        clusters: &[DuplicateCluster],
+        clones: &[ClonePair],
+    ) -> String;
 }
 
 pub mod json;

@@ -13,6 +13,11 @@ pub struct FunctionComplexity {
     pub halstead_difficulty: f64,
     pub halstead_effort: f64,
     pub halstead_time: f64,
+    /// Normalized CST token sequence for clone detection, populated only when
+    /// clone-signature computation is requested. Never part of the public
+    /// JSON schema and never computed unless explicitly asked for.
+    #[serde(skip)]
+    pub clone_tokens: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -24,6 +29,11 @@ pub struct FileResult {
     pub functions: Vec<FunctionComplexity>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+    /// Language of this file, e.g. "Rust" or "Python", used to scope clone
+    /// comparisons to same-language pairs. Internal plumbing only — never
+    /// part of the public JSON schema.
+    #[serde(skip)]
+    pub language: &'static str,
     pub max_nesting_depth: u32,
     pub avg_nesting_depth: f64,
     pub avg_halstead_volume: f64,
@@ -48,6 +58,7 @@ impl Default for FileResult {
             function_count: 0,
             functions: Vec::new(),
             error: None,
+            language: "",
             max_nesting_depth: 0,
             avg_nesting_depth: 0.0,
             avg_halstead_volume: 0.0,
@@ -126,6 +137,7 @@ impl FileResult {
         total_lines: usize,
         functions: Vec<FunctionComplexity>,
         acc: &FileResultAccumulator,
+        language: &'static str,
     ) -> Self {
         let count = functions.len();
         let n = count as f64;
@@ -135,6 +147,7 @@ impl FileResult {
             total_lines,
             function_count: count,
             error: None,
+            language,
             max_nesting_depth: acc.max_nesting_depth,
             avg_nesting_depth: acc.sum_nesting / n,
             max_complexity: acc.max_complexity,
@@ -156,12 +169,14 @@ impl FileResult {
         path: &Path,
         total_lines: usize,
         functions: Vec<FunctionComplexity>,
+        language: &'static str,
     ) -> Self {
         let count = functions.len();
         if count == 0 {
             return Self {
                 path: path.to_path_buf(),
                 total_lines,
+                language,
                 ..Default::default()
             };
         }
@@ -171,7 +186,7 @@ impl FileResult {
             acc.add(f);
         }
 
-        Self::from_accumulator(path, total_lines, functions, &acc)
+        Self::from_accumulator(path, total_lines, functions, &acc, language)
     }
 }
 
@@ -216,6 +231,8 @@ pub struct AnalysisOutput {
     pub files: Vec<FileResult>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub clusters: Option<Vec<crate::duplicates::DuplicateCluster>>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub clones: Option<Vec<crate::clones::ClonePair>>,
 }
 
 fn safe_div(numerator: f64, denominator: f64) -> f64 {
@@ -306,6 +323,7 @@ impl SummaryStatistics {
 }
 
 pub mod analyzer;
+pub mod clones;
 pub mod cognitive;
 pub mod complexity;
 pub mod config;

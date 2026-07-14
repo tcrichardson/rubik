@@ -22,11 +22,16 @@ static ANALYZERS: &[&dyn LanguageAnalyzer] = &[
 pub fn analyze_path(
     path: &Path,
     include_closures: bool,
+    compute_clone_signature: bool,
 ) -> Result<Vec<FileResult>, std::io::Error> {
     if path.is_file() {
-        Ok(vec![analyze_file(path, include_closures)?])
+        Ok(vec![analyze_file(
+            path,
+            include_closures,
+            compute_clone_signature,
+        )?])
     } else if path.is_dir() {
-        analyze_directory(path, include_closures)
+        analyze_directory(path, include_closures, compute_clone_signature)
     } else {
         Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
@@ -38,6 +43,7 @@ pub fn analyze_path(
 fn analyze_directory(
     path: &Path,
     include_closures: bool,
+    compute_clone_signature: bool,
 ) -> Result<Vec<FileResult>, std::io::Error> {
     let mut results = Vec::new();
     for entry in WalkDir::new(path) {
@@ -50,13 +56,17 @@ fn analyze_directory(
         };
         let p = entry.path();
         if p.is_file() {
-            results.push(analyze_file(p, include_closures)?);
+            results.push(analyze_file(p, include_closures, compute_clone_signature)?);
         }
     }
     Ok(results)
 }
 
-fn analyze_file(path: &Path, include_closures: bool) -> Result<FileResult, std::io::Error> {
+fn analyze_file(
+    path: &Path,
+    include_closures: bool,
+    compute_clone_signature: bool,
+) -> Result<FileResult, std::io::Error> {
     let source = match std::fs::read_to_string(path) {
         Ok(s) => s,
         Err(e) => return Ok(build_error_result(path, 0, e.to_string())),
@@ -65,9 +75,14 @@ fn analyze_file(path: &Path, include_closures: bool) -> Result<FileResult, std::
 
     for analyzer in ANALYZERS {
         if analyzer.can_analyze(path) {
-            match analyzer.analyze(&source, include_closures) {
+            match analyzer.analyze_full(&source, include_closures, compute_clone_signature) {
                 Ok(functions) => {
-                    return Ok(FileResult::from_functions(path, total_lines, functions));
+                    return Ok(FileResult::from_functions(
+                        path,
+                        total_lines,
+                        functions,
+                        analyzer.language_name(),
+                    ));
                 }
                 Err(e) => return Ok(build_error_result(path, total_lines, e)),
             }

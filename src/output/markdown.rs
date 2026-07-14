@@ -1,5 +1,5 @@
 use crate::{
-    FileResult, FunctionComplexity, SummaryStatistics, config::ReportConfig,
+    FileResult, FunctionComplexity, SummaryStatistics, clones::ClonePair, config::ReportConfig,
     duplicates::DuplicateCluster, output::OutputFormatter,
 };
 
@@ -8,7 +8,12 @@ pub struct MarkdownFormatter {
 }
 
 impl OutputFormatter for MarkdownFormatter {
-    fn format(&self, results: &[FileResult], clusters: &[DuplicateCluster]) -> String {
+    fn format(
+        &self,
+        results: &[FileResult],
+        clusters: &[DuplicateCluster],
+        clones: &[ClonePair],
+    ) -> String {
         let mut out = String::new();
 
         if let Some(ref intro) = self.config.introduction {
@@ -23,6 +28,10 @@ impl OutputFormatter for MarkdownFormatter {
 
         if !clusters.is_empty() {
             out.push_str(&format_clusters(clusters));
+        }
+
+        if !clones.is_empty() {
+            out.push_str(&format_clones(clones));
         }
 
         for file in results {
@@ -311,5 +320,27 @@ fn format_clusters(clusters: &[DuplicateCluster]) -> String {
         }
         out.push('\n');
     }
+    out
+}
+
+fn format_clones(clones: &[ClonePair]) -> String {
+    let mut out = String::from("## Clone Candidates\n\n");
+    out.push_str("| Similarity | Function A | Function B |\n");
+    out.push_str("|------------|------------|------------|\n");
+    for pair in clones {
+        out.push_str(&format!(
+            "| {:.2} | {} ({}:{}-{}) | {} ({}:{}-{}) |\n",
+            pair.similarity,
+            pair.a.name,
+            pair.a.path.display(),
+            pair.a.line_start,
+            pair.a.line_end,
+            pair.b.name,
+            pair.b.path.display(),
+            pair.b.line_start,
+            pair.b.line_end,
+        ));
+    }
+    out.push('\n');
     out
 }
