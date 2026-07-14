@@ -44,17 +44,23 @@ impl Default for CloneConfig {
 /// sequence (i.e. their language doesn't yet support clone detection), and
 /// cross-language pairs are excluded before any comparison work happens.
 pub fn compute_clones(results: &[FileResult], config: &CloneConfig) -> Vec<ClonePair> {
-    let candidates: Vec<(&FileResult, &FunctionComplexity)> = results
+    // Each candidate's shingle set is computed once up front and reused across
+    // every pair it participates in, rather than being rebuilt per comparison.
+    let candidates: Vec<(&FileResult, &FunctionComplexity, HashSet<&[String]>)> = results
         .iter()
         .flat_map(|file| file.functions.iter().map(move |func| (file, func)))
         .filter(|(_, func)| func.lines >= config.min_lines && !func.clone_tokens.is_empty())
+        .map(|(file, func)| {
+            let shingles = shingles(&func.clone_tokens);
+            (file, func, shingles)
+        })
         .collect();
 
     let mut pairs = Vec::new();
 
     for i in 0..candidates.len() {
-        let (file_a, func_a) = candidates[i];
-        for &(file_b, func_b) in &candidates[i + 1..] {
+        let (file_a, func_a, ref shingles_a) = candidates[i];
+        for (file_b, func_b, shingles_b) in &candidates[i + 1..] {
             if file_a.language != file_b.language {
                 continue;
             }
@@ -65,7 +71,7 @@ pub fn compute_clones(results: &[FileResult], config: &CloneConfig) -> Vec<Clone
             ) {
                 continue;
             }
-            let similarity = jaccard_similarity(&func_a.clone_tokens, &func_b.clone_tokens);
+            let similarity = jaccard_similarity(shingles_a, shingles_b);
             if similarity >= config.similarity_threshold {
                 pairs.push(ClonePair {
                     a: side(file_a, func_a),
@@ -120,11 +126,9 @@ fn shingles(tokens: &[String]) -> HashSet<&[String]> {
     }
 }
 
-fn jaccard_similarity(a: &[String], b: &[String]) -> f64 {
-    let sa = shingles(a);
-    let sb = shingles(b);
-    let intersection = sa.intersection(&sb).count();
-    let union = sa.union(&sb).count();
+fn jaccard_similarity(sa: &HashSet<&[String]>, sb: &HashSet<&[String]>) -> f64 {
+    let intersection = sa.intersection(sb).count();
+    let union = sa.union(sb).count();
     if union == 0 {
         0.0
     } else {
