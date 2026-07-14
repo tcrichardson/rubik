@@ -2,6 +2,8 @@
 
 A fast CLI tool that computes cyclomatic code complexity and Halstead metrics for Rust, Python, JavaScript, TypeScript, C, and Java source files. It reports complexity and cognitive metrics per function and per file. By default, closures and anonymous functions are excluded from analysis so they don't skew aggregate metrics — you can opt to include them with `--include-closures`.
 
+It can also optionally detect structural function clones (copy-pasted logic that has since drifted via renames, literal changes, or small edits) via the opt-in `--clones` flag — see [Clone Detection](#clone-detection) below.
+
 ## Features
 
 - **Multi-language support:** Rust, Python, JavaScript/JSX, TypeScript/TSX, C, and Java
@@ -11,7 +13,8 @@ A fast CLI tool that computes cyclomatic code complexity and Halstead metrics fo
 - **Per-function & per-file reporting:** See complexity and Halstead metrics at every level
 - **Project-level summary:** Aggregated statistics across all analyzed files
 - **Closure handling:** Closures, lambdas, and arrow functions are excluded by default so they don't inflate function counts or dilute averages. Use `--include-closures` to analyze them
-- **Two output formats:** Pretty-printed tables (default) and JSON
+- **Structural clone detection (opt-in):** Detect near-duplicate functions — even after renames, literal changes, or small edits — for Rust and Python via `--clones`
+- **Three output formats:** Markdown (default), pretty-printed tables, and JSON
 - **Directory scanning:** Analyze entire codebases recursively
 - **Graceful error handling:** Unparseable files are reported to stderr but do not stop the analysis
 
@@ -53,6 +56,12 @@ Include closures and lambdas in the analysis:
 polygraph src/ --include-closures
 ```
 
+Detect structural clones (Rust and Python only):
+
+```bash
+polygraph src/ --clones
+```
+
 ### CLI Options
 
 ```
@@ -62,11 +71,23 @@ Arguments:
   <PATH>  Path to a file or directory to analyze
 
 Options:
-  -c, --config <CONFIG>     Path to a polygraph.toml configuration file
-  -f, --format <FORMAT>     Output format: pretty or json [default: pretty]
-      --include-closures    Include closures, lambdas, and arrow functions in the analysis
-  -h, --help                Print help
-  -V, --version             Print version
+  -f, --format <FORMAT>
+          Output format: markdown, pretty, or json [default: markdown]
+      --include-closures
+          Include closures and lambda expressions in the analysis
+  -c, --config <CONFIG>
+          Path to a polygraph.toml configuration file
+      --clones
+          Enable structural (Type-1/2/3) clone detection via CST comparison. Off by
+          default: output and performance are unchanged without this flag
+      --clone-threshold <CLONE_THRESHOLD>
+          Override the clone similarity threshold (0.0-1.0) from polygraph.toml
+      --clone-min-lines <CLONE_MIN_LINES>
+          Override the minimum function size (in lines) considered for clone comparison
+  -h, --help
+          Print help
+  -V, --version
+          Print version
 ```
 
 ## Configuration
@@ -104,6 +125,12 @@ metrics = [
   "max_complexity",
   "max_nesting_depth",
 ]
+
+# Only used when --clones is passed. If omitted, similarity_threshold
+# defaults to 0.85 and min_lines defaults to 5.
+[clones]
+similarity_threshold = 0.85
+min_lines = 5
 ~~~
 
 ### Available Metric Keys
@@ -296,6 +323,97 @@ Derived from counting distinct operators and operands within each function:
 ### Project-Level Summary
 When analyzing multiple files, the JSON and pretty output include a top-level summary aggregating statistics across all successfully analyzed files with functions.
 
+## Structural Duplication Candidates (Exact-Match)
+
+polygraph always (no flag required) flags one narrow kind of duplication: functions that share the exact same name *and* have byte-for-byte identical complexity, nesting, and Halstead metrics across files. When found, these appear as a "Structural Duplication Candidates" section in markdown/pretty output (or a `clusters` field in JSON).
+
+Real copy-pasted code rarely stays this identical for long — a variable gets renamed, a literal gets tweaked, or a statement gets added — which breaks this exact-match check. For that, see [Clone Detection](#clone-detection) below.
+
+## Clone Detection
+
+`--clones` adds a second, opt-in detector that compares function *bodies* using their tree-sitter concrete syntax trees, tolerant of renamed identifiers, changed literals, and small structural edits (Type-1/2/3 clones). It is off by default: **output and performance are completely unchanged unless you pass `--clones` explicitly.**
+
+### How it works
+
+For each function body, polygraph walks its syntax tree into a normalized token sequence:
+- **Call and method target names are preserved as-is** (e.g. `bar` in `bar(x)`, or `method` in `obj.method(x)`) — they're the strongest signal that two functions do related things.
+- **Local variable names and literal values are replaced with generic placeholders** (`<ID>`, `<LIT>`) so renames and tweaked constants don't mask a real duplicate.
+- **Everything else** (control flow, statement structure) contributes its syntax node kind.
+
+Two functions' normalized token sequences are then compared using k-gram shingled Jaccard similarity, producing a score from `0.0` to `1.0`. Any pair meeting or exceeding the configured threshold is reported, along with its score — pairs are reported individually, not grouped into transitive clusters, since similarity isn't guaranteed to be transitive.
+
+Only function *bodies* are compared (not signatures), so a clone is still detected even if someone changed a function's parameter list without changing its logic.
+
+### Usage
+
+```bash
+# Report clone pairs in markdown (default)
+polygraph src/ --clones
+
+# Same, as JSON
+polygraph src/ --clones -f json
+
+# Override the threshold/minimum size for one run
+polygraph src/ --clones --clone-threshold 0.9 --clone-min-lines 8
+```
+
+### Configuration
+
+Configure defaults in `polygraph.toml` under `[clones]`:
+
+```toml
+[clones]
+similarity_threshold = 0.85  # 0.0-1.0; default 0.85
+min_lines = 5                # functions shorter than this are never compared; default 5
+```
+
+`--clone-threshold` and `--clone-min-lines` override the config file for a single run, the same way other CLI flags layer over `polygraph.toml`.
+
+### Example markdown output
+
+```markdown
+## Clone Candidates
+
+| Similarity | Function A | Function B |
+|------------|------------|------------|
+| 1.00 | calculate_total (src/billing.rs:12-20) | compute_sum (src/reports.rs:44-52) |
+```
+
+### Example JSON output
+
+The JSON `clones` field is only present (and non-null) when `--clones` finds at least one pair:
+
+```json
+{
+  "clones": [
+    {
+      "a": {
+        "path": "src/billing.rs",
+        "name": "calculate_total",
+        "line_start": 12,
+        "line_end": 20
+      },
+      "b": {
+        "path": "src/reports.rs",
+        "name": "compute_sum",
+        "line_start": 44,
+        "line_end": 52
+      },
+      "similarity": 1.0
+    }
+  ]
+}
+```
+
+### Scope and limitations
+
+- **Languages:** Rust and Python only in this release. Files in other supported languages (JavaScript, TypeScript, C, Go, Java) are simply never compared for clones.
+- **Same-language only:** comparisons never cross a language boundary (Rust is only compared to Rust, Python only to Python).
+- **Trivial functions excluded:** functions shorter than `min_lines` are excluded from comparison entirely.
+- **Not transitive:** clone pairs are reported individually with their own score; polygraph does not group them into clusters.
+- **Structural (Type-1/2/3) only.** This does *not* detect **semantic/behavioral clones** (Type-4) — two differently-written functions that happen to do the same thing (e.g. two unrelated code paths that both end up issuing an `UPDATE` against the same database table) have no shared syntax tree structure to compare and will not be flagged. Detecting that class of duplication requires different techniques entirely.
+- Purely additive: this feature has no effect on the existing exact-match duplicate-cluster output described above, and produces zero output or behavior change unless `--clones` is passed.
+
 ## Supported File Extensions
 
 | Language | Extensions |
@@ -318,12 +436,14 @@ cargo test
 ```
 
 The suite includes:
-- **Unit tests** for each language analyzer and the cognitive metrics module (61 tests)
-- **Integration tests** that exercise the CLI against fixture files (13 tests)
+- **Unit tests** for each language analyzer, the cognitive metrics module, duplicate-cluster detection, and clone detection (98 tests)
+- **Integration tests** that exercise the CLI against fixture files, including end-to-end clone detection (20 tests)
 
 ## Architecture
 
 Polygraph uses [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) to parse source code into ASTs. Each language has a dedicated analyzer that walks the AST to find function boundaries and count decision points. A shared `cognitive` module computes nesting depth and Halstead metrics for every function. A shared dispatcher routes files to the correct analyzer based on extension.
+
+The exact-match duplication feature (`duplicates` module) and the opt-in clone detector (`clones` module) are independent, additive features built on top of this same per-function data: `duplicates` groups functions with identical metrics, while `clones` (Rust and Python only, for now) normalizes each function body into a token sequence — via a per-language classification hook analogous to the existing name-extraction hook — and compares those sequences pairwise for structural similarity.
 
 ## License
 
