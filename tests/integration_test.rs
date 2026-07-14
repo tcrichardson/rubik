@@ -395,6 +395,70 @@ fn test_compute_clones_detects_renamed_python_pair() {
 }
 
 #[test]
+fn test_compute_clones_detects_renamed_javascript_pair() {
+    let results = polygraph::analyze_path(
+        std::path::Path::new("tests/fixtures/clones/javascript"),
+        false,
+        true,
+    )
+    .expect("failed to analyze clones/javascript directory");
+
+    let clone_config = polygraph::clones::CloneConfig::default();
+    let pairs = polygraph::clones::compute_clones(&results, &clone_config);
+
+    let found = pairs.iter().find(|p| {
+        (p.a.name == "calculateTotal" && p.b.name == "computeSum")
+            || (p.a.name == "computeSum" && p.b.name == "calculateTotal")
+    });
+    assert!(
+        found.is_some(),
+        "expected a clone pair between calculateTotal and computeSum, got: {:#?}",
+        pairs
+    );
+    assert!(found.unwrap().similarity >= clone_config.similarity_threshold);
+
+    assert!(
+        !pairs
+            .iter()
+            .any(|p| p.a.name == "unrelatedHelper" || p.b.name == "unrelatedHelper"),
+        "unrelatedHelper must not appear in any clone pair, got: {:#?}",
+        pairs
+    );
+}
+
+#[test]
+fn test_compute_clones_detects_renamed_typescript_pair() {
+    let results = polygraph::analyze_path(
+        std::path::Path::new("tests/fixtures/clones/typescript"),
+        false,
+        true,
+    )
+    .expect("failed to analyze clones/typescript directory");
+
+    let clone_config = polygraph::clones::CloneConfig::default();
+    let pairs = polygraph::clones::compute_clones(&results, &clone_config);
+
+    let found = pairs.iter().find(|p| {
+        (p.a.name == "calculateTotal" && p.b.name == "computeSum")
+            || (p.a.name == "computeSum" && p.b.name == "calculateTotal")
+    });
+    assert!(
+        found.is_some(),
+        "expected a clone pair between calculateTotal and computeSum, got: {:#?}",
+        pairs
+    );
+    assert!(found.unwrap().similarity >= clone_config.similarity_threshold);
+
+    assert!(
+        !pairs
+            .iter()
+            .any(|p| p.a.name == "unrelatedHelper" || p.b.name == "unrelatedHelper"),
+        "unrelatedHelper must not appear in any clone pair, got: {:#?}",
+        pairs
+    );
+}
+
+#[test]
 fn test_clones_cli_off_by_default_leaves_output_unchanged() {
     let without_flag = polygraph()
         .arg("tests/fixtures/clones/rust")

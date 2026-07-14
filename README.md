@@ -13,7 +13,7 @@ It can also optionally detect structural function clones (copy-pasted logic that
 - **Per-function & per-file reporting:** See complexity and Halstead metrics at every level
 - **Project-level summary:** Aggregated statistics across all analyzed files
 - **Closure handling:** Closures, lambdas, and arrow functions are excluded by default so they don't inflate function counts or dilute averages. Use `--include-closures` to analyze them
-- **Structural clone detection (opt-in):** Detect near-duplicate functions — even after renames, literal changes, or small edits — for Rust and Python via `--clones`
+- **Structural clone detection (opt-in):** Detect near-duplicate functions — even after renames, literal changes, or small edits — for Rust, Python, JavaScript, and TypeScript via `--clones`
 - **Three output formats:** Markdown (default), pretty-printed tables, and JSON
 - **Directory scanning:** Analyze entire codebases recursively
 - **Graceful error handling:** Unparseable files are reported to stderr but do not stop the analysis
@@ -56,7 +56,7 @@ Include closures and lambdas in the analysis:
 polygraph src/ --include-closures
 ```
 
-Detect structural clones (Rust and Python only):
+Detect structural clones (Rust, Python, JavaScript, and TypeScript):
 
 ```bash
 polygraph src/ --clones
@@ -407,7 +407,7 @@ The JSON `clones` field is only present (and non-null) when `--clones` finds at 
 
 ### Scope and limitations
 
-- **Languages:** Rust and Python only in this release. Files in other supported languages (JavaScript, TypeScript, C, Go, Java) are simply never compared for clones.
+- **Languages:** Rust, Python, JavaScript, and TypeScript in this release. Files in other supported languages (C, Go, Java) are simply never compared for clones.
 - **Same-language only:** comparisons never cross a language boundary (Rust is only compared to Rust, Python only to Python).
 - **Trivial functions excluded:** functions shorter than `min_lines` are excluded from comparison entirely.
 - **Not transitive:** clone pairs are reported individually with their own score; polygraph does not group them into clusters.
@@ -443,7 +443,7 @@ The suite includes:
 
 Polygraph uses [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) to parse source code into ASTs. Each language has a dedicated analyzer that walks the AST to find function boundaries and count decision points. A shared `cognitive` module computes nesting depth and Halstead metrics for every function. A shared dispatcher routes files to the correct analyzer based on extension.
 
-The exact-match duplication feature (`duplicates` module) and the opt-in clone detector (`clones` module) are independent, additive features built on top of this same per-function data: `duplicates` groups functions with identical metrics, while `clones` (Rust and Python only, for now) normalizes each function body into a token sequence — via a per-language classification hook analogous to the existing name-extraction hook — and compares those sequences pairwise for structural similarity.
+The exact-match duplication feature (`duplicates` module) and the opt-in clone detector (`clones` module) are independent, additive features built on top of this same per-function data: `duplicates` groups functions with identical metrics, while `clones` (Rust, Python, JavaScript, and TypeScript, for now) normalizes each function body into a token sequence — via a per-language classification hook analogous to the existing name-extraction hook — and compares those sequences pairwise for structural similarity.
 
 ## License
 
